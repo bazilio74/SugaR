@@ -16,3 +16,6 @@
 *.suo
 *.sqlite
 *.json
+
+# Ignore temporary folders
+.vs/

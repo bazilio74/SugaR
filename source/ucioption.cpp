@@ -73,7 +73,7 @@ void init(OptionsMap& o) {
   if (!n) n = 1;
   
   o["Debug Log File"]           << Option("", on_logger);
-  o["Contempt Factor"]          << Option(0, -100, 100);
+  o["Contempt"]                 << Option(0, -100, 100);
   o["Threads"]                  << Option(n, 1, 512, on_threads);
   o["Hash"]                     << Option(16, 1, MaxHashMB, on_hash_size);
   o["Clear Hash"]               << Option(on_clear_hash);
@@ -98,7 +98,7 @@ void init(OptionsMap& o) {
   o["Space"]                    << Option(100, 0, 500, on_eval);
   o["MultiPV"]                  << Option(1, 1, 500);
   o["Skill Level"]              << Option(20, 0, 20);
-  o["Move Overhead"]            << Option(30, 0, 5000);
+  o["Move Overhead"]            << Option(100, 0, 5000);
   o["Minimum Thinking Time"]    << Option(20, 0, 5000);
   o["Slow Mover"]               << Option(89, 10, 1000);
   o["nodestime"]                << Option(0, 0, 10000);

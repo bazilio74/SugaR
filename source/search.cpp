@@ -55,9 +55,12 @@ namespace Tablebases {
 
 namespace TB = Tablebases;
 
+using namespace Search;
 using std::string;
 using Eval::evaluate;
-using namespace Search;
+using Eval::score_to_value;
+using Eval::Contempt;
+extern Score Eval::Contempt[COLOR_NB];
 
 namespace {
 
@@ -98,47 +101,8 @@ namespace {
     Move best = MOVE_NONE;
   };
 
-  // EasyMoveManager structure is used to detect an 'easy move'. When the PV is stable
-  // across multiple search iterations, we can quickly return the best move.
-  struct EasyMoveManager {
-
-    void clear() {
-      stableCnt = 0;
-      expectedPosKey = 0;
-      pv[0] = pv[1] = pv[2] = MOVE_NONE;
-    }
-
-    Move get(Key key) const {
-      return expectedPosKey == key ? pv[2] : MOVE_NONE;
-    }
-
-    void update(Position& pos, const std::vector<Move>& newPv) {
-
-      assert(newPv.size() >= 3);
-
-      // Keep track of how many times in a row the 3rd ply remains stable
-      stableCnt = (newPv[2] == pv[2]) ? stableCnt + 1 : 0;
-
-      if (!std::equal(newPv.begin(), newPv.begin() + 3, pv))
-      {
-          std::copy(newPv.begin(), newPv.begin() + 3, pv);
-
-          StateInfo st[2];
-          pos.do_move(newPv[0], st[0]);
-          pos.do_move(newPv[1], st[1]);
-          expectedPosKey = pos.key();
-          pos.undo_move(newPv[1]);
-          pos.undo_move(newPv[0]);
-      }
-    }
-
-    int stableCnt;
-    Key expectedPosKey;
-    Move pv[3];
-  };
   
   bool doNull;
-  EasyMoveManager EasyMove;
   bool cleanSearch;
   Value DrawValue[COLOR_NB];
 
@@ -153,7 +117,8 @@ namespace {
   void update_pv(Move* pv, Move move, Move* childPv);
   void update_continuation_histories(Stack* ss, Piece pc, Square to, int bonus);
   void update_stats(const Position& pos, Stack* ss, Move move, Move* quiets, int quietsCnt, int bonus);
-  bool PVisDraw(Position& pos);
+  void update_capture_stats(const Position& pos, Move move, Move* captures, int captureCnt, int bonus);
+  bool pv_is_draw(Position& pos);
 
 } // namespace
 
@@ -204,7 +169,9 @@ void Search::clear() {
 
   Threads.main()->callsCnt = 0;
   Threads.main()->previousScore = VALUE_INFINITE;
+  Threads.main()->previousTimeReduction = 1;
 }
+
 
 
 /// Search::perft() is our utility to verify move generation. All the leaf nodes
@@ -252,9 +219,16 @@ void MainThread::search() {
 
   doNull = Options["NullMove"];
   
-  int contempt = Options["Contempt Factor"] * PawnValueEg / 100; // From centipawns
-  DrawValue[ us] = VALUE_DRAW - Value(contempt);
-  DrawValue[~us] = VALUE_DRAW + Value(contempt);
+  int base_contempt = Options["Contempt"] * PawnValueEg / 100; // From centipawns
+  // gradially reduce contempt when previousScore is between -4 and -3 base_contempt.
+  base_contempt = std::min(base_contempt, std::max(0, (int(previousScore) + 4 * base_contempt )));
+  
+  Contempt[ us] =  make_score(base_contempt, 0);
+  Contempt[~us] = -Contempt[us];
+
+  DrawValue[ us] = VALUE_DRAW - score_to_value(Contempt[us], rootPos);
+  DrawValue[~us] = VALUE_DRAW + score_to_value(Contempt[us], rootPos);
+
   if (rootMoves.empty())
   {
       rootMoves.emplace_back(MOVE_NONE);
@@ -323,8 +297,7 @@ finalize:
 
   // Check if there are threads with a better score than main thread
   Thread* bestThread = this;
-  if (   !this->easyMovePlayed
-      &&  Options["MultiPV"] == 1
+  if (    Options["MultiPV"] == 1
       && !Limits.depth
       && !Skill(Options["Skill Level"]).enabled()
       &&  rootMoves[0].pv[0] != MOVE_NONE)
@@ -364,8 +337,10 @@ void Thread::search() {
 
   Stack stack[MAX_PLY+7], *ss = stack+4; // To reference from (ss-4) to (ss+2)
   Value bestValue, alpha, beta, delta;
-  Move easyMove = MOVE_NONE;
+  Move  lastBestMove = MOVE_NONE;
+  Depth lastBestMoveDepth = DEPTH_ZERO;
   MainThread* mainThread = (this == Threads.main() ? Threads.main() : nullptr);
+  double timeReduction = 1.0;
 
   std::memset(ss-4, 0, 7 * sizeof(Stack));
   for (int i = 4; i > 0; i--)
@@ -379,9 +354,7 @@ void Thread::search() {
 
   if (mainThread)
   {
-      easyMove = EasyMove.get(rootPos.key());
-      EasyMove.clear();
-      mainThread->easyMovePlayed = mainThread->failedLow = false;
+      mainThread->failedLow = false;
       mainThread->bestMoveChanges = 0;
   }
 
@@ -496,6 +469,11 @@ void Thread::search() {
       if (!Threads.stop)
           completedDepth = rootDepth;
 
+      if (rootMoves[0].pv[0] != lastBestMove) {
+         lastBestMove = rootMoves[0].pv[0];
+         lastBestMoveDepth = rootDepth;
+      }
+
       // Have we found a "mate in x"?
       if (   Limits.mate
           && bestValue >= VALUE_MATE_IN_MAX_PLY
@@ -515,27 +493,29 @@ void Thread::search() {
           if (!Threads.stop && !Threads.stopOnPonderhit)
           {
               // Stop the search if only one legal move is available, or if all
-              // of the available time has been used, or if we matched an easyMove
-              // from the previous search and just did a fast verification.
+              // of the available time has been used
               const int F[] = { mainThread->failedLow,
                                 bestValue - mainThread->previousScore };
               int improvingFactor = std::max(229, std::min(715, 357 + 119 * F[0] - 6 * F[1]));
-
+			  
               Color us = rootPos.side_to_move();
               bool thinkHard =    DrawValue[us] == bestValue
                                && Limits.time[us] - Time.elapsed() > Limits.time[~us]
-                               && ::PVisDraw(rootPos);
+                               && ::pv_is_draw(rootPos);
 
-              double unstablePvFactor = (thinkHard ? 2 : 1) + mainThread->bestMoveChanges;
+              double unstablePvFactor = 1 + mainThread->bestMoveChanges + thinkHard;
 
-              bool doEasyMove =   rootMoves[0].pv[0] == easyMove
-                               && !thinkHard
-                               && mainThread->bestMoveChanges < 0.03
-                               && Time.elapsed() > Time.optimum() * 5 / 44;
+              // if the bestMove is stable over several iterations, reduce time for this move,
+              // the longer the move has been stable, the more.
+              // Use part of the gained time from a previous stable move for the current move.
+              timeReduction = 1;
+              for (int i : {3, 4, 5})
+                  if (lastBestMoveDepth * i < completedDepth && !thinkHard)
+                     timeReduction *= 1.3;
+              unstablePvFactor *=  std::pow(mainThread->previousTimeReduction, 0.51) / timeReduction;
 
               if (   rootMoves.size() == 1
-                  || Time.elapsed() > Time.optimum() * unstablePvFactor * improvingFactor / 628
-                  || (mainThread->easyMovePlayed = doEasyMove, doEasyMove))
+                  || Time.elapsed() > Time.optimum() * unstablePvFactor * improvingFactor / 628)
               {
                   // If we are allowed to ponder do not stop the search now but
                   // keep pondering until the GUI sends "ponderhit" or "stop".
@@ -545,21 +525,13 @@ void Thread::search() {
                       Threads.stop = true;
               }
           }
-
-          if (rootMoves[0].pv.size() >= 3)
-              EasyMove.update(rootPos, rootMoves[0].pv);
-          else
-              EasyMove.clear();
       }
   }
 
   if (!mainThread)
       return;
 
-  // Clear any candidate easy move that wasn't stable for the last search
-  // iterations; the second condition prevents consecutive fast moves.
-  if (EasyMove.stableCnt < 6 || mainThread->easyMovePlayed)
-      EasyMove.clear();
+  mainThread->previousTimeReduction = timeReduction;
 
   // If skill level is enabled, swap best PV line with the sub-optimal one
   if (skill.enabled())
@@ -570,23 +542,8 @@ void Thread::search() {
 
 namespace {
 
-  // is the PV leading to a draw position ?
-  bool PVisDraw(Position& pos) {
-    auto& pv = pos.this_thread()->rootMoves[0].pv;
-    StateInfo st[MAX_PLY];
-
-    for (size_t i = 0; i < pv.size(); i++)
-        pos.do_move(pv[i], st[i]);
-
-    bool isDraw = pos.is_draw(pv.size());
-
-    for (size_t i = pv.size(); i > 0; i--)
-        pos.undo_move(pv[i-1]);
-
-    return isDraw;
-  }
-
   // search<>() is the main search function for both PV and non-PV nodes
+
   template <NodeType NT>
   Value search(Position& pos, Stack* ss, Value alpha, Value beta, Depth depth, bool cutNode, bool skipEarlyPruning) {
 
@@ -599,7 +556,7 @@ namespace {
     assert(!(PvNode && cutNode));
     assert(depth / ONE_PLY * ONE_PLY == depth);
 
-    Move pv[MAX_PLY+1], quietsSearched[64];
+    Move pv[MAX_PLY+1], capturesSearched[32], quietsSearched[64];
     StateInfo st;
     TTEntry* tte;
     Key posKey;
@@ -609,12 +566,12 @@ namespace {
     bool ttHit, inCheck, givesCheck, singularExtensionNode, improving;
     bool captureOrPromotion, doFullDepthSearch, moveCountPruning, skipQuiets, ttCapture, pvExact;
     Piece movedPiece;
-    int moveCount, quietCount;
+    int moveCount, captureCount, quietCount;
 
     // Step 1. Initialize node
     Thread* thisThread = pos.this_thread();
     inCheck = pos.checkers();
-    moveCount = quietCount = ss->moveCount = 0;
+    moveCount = captureCount = quietCount = ss->moveCount = 0;
     ss->statScore = 0;
     bestValue = -VALUE_INFINITE;
 
@@ -791,7 +748,7 @@ namespace {
     if (    doNull
         && !PvNode
         &&  eval >= beta
-        && (ss->staticEval >= beta - 35 * (depth / ONE_PLY - 6) || depth >= 13 * ONE_PLY)
+        &&  ss->staticEval >= beta - 36 * depth / ONE_PLY + 225
         &&  pos.non_pawn_material(pos.side_to_move()))
     {
 
@@ -837,7 +794,7 @@ namespace {
 
         assert(is_ok((ss-1)->currentMove));
 
-        MovePicker mp(pos, ttMove, rbeta - ss->staticEval);
+        MovePicker mp(pos, ttMove, rbeta - ss->staticEval, &thisThread->captureHistory);
 
         while ((move = mp.next_move()) != MOVE_NONE)
             if (pos.legal(move))
@@ -871,7 +828,7 @@ moves_loop: // When in check search starts from here
     const PieceToHistory* contHist[] = { (ss-1)->contHistory, (ss-2)->contHistory, nullptr, (ss-4)->contHistory };
     Move countermove = thisThread->counterMoves[pos.piece_on(prevSq)][prevSq];
 
-    MovePicker mp(pos, ttMove, depth, &thisThread->mainHistory, contHist, countermove, ss->killers);
+    MovePicker mp(pos, ttMove, depth, &thisThread->mainHistory, &thisThread->captureHistory, contHist, countermove, ss->killers);
     value = bestValue; // Workaround a bogus 'uninitialized' warning under gcc
     improving =   ss->staticEval >= (ss-2)->staticEval
             /* || ss->staticEval == VALUE_NONE Already implicit in the previous condition */
@@ -1175,6 +1132,8 @@ moves_loop: // When in check search starts from here
 
       if (!captureOrPromotion && move != bestMove && quietCount < 64)
           quietsSearched[quietCount++] = move;
+	  else if (captureOrPromotion && move != bestMove && captureCount < 32)
+		  capturesSearched[captureCount++] = move;
     }
 
     // The following condition would detect a stop only after move loop has been
@@ -1200,7 +1159,9 @@ moves_loop: // When in check search starts from here
         // Quiet best move: update move sorting heuristics
         if (!pos.capture_or_promotion(bestMove))
             update_stats(pos, ss, bestMove, quietsSearched, quietCount, stat_bonus(depth));
-        else if(type_of(bestMove) == PROMOTION || quietCount > 3)
+        else
+            update_capture_stats(pos, bestMove, capturesSearched, captureCount, stat_bonus(depth));
+			if(type_of(bestMove) == PROMOTION || quietCount > 3)
 		{
 			if (ss->killers[2] != bestMove)
 			{
@@ -1337,7 +1298,7 @@ moves_loop: // When in check search starts from here
     // to search the moves. Because the depth is <= 0 here, only captures,
     // queen promotions and checks (only if depth >= DEPTH_QS_CHECKS) will
     // be generated.
-    MovePicker mp(pos, ttMove, depth, &pos.this_thread()->mainHistory, to_sq((ss-1)->currentMove));
+    MovePicker mp(pos, ttMove, depth, &pos.this_thread()->mainHistory, &pos.this_thread()->captureHistory, to_sq((ss-1)->currentMove));
 
     // Loop through the moves until no moves remain or a beta cutoff occurs
     while ((move = mp.next_move()) != MOVE_NONE)
@@ -1492,8 +1453,27 @@ moves_loop: // When in check search starts from here
   }
 
 
-  // update_stats() updates move sorting heuristics when a new quiet best move is found
+  // update_capture_stats() updates move sorting heuristics when a new capture best move is found
 
+  void update_capture_stats(const Position& pos, Move move,
+                            Move* captures, int captureCnt, int bonus) {
+
+      CapturePieceToHistory& captureHistory =  pos.this_thread()->captureHistory;
+      Piece moved_piece = pos.moved_piece(move);
+      PieceType captured = type_of(pos.piece_on(to_sq(move)));
+      captureHistory.update(moved_piece,to_sq(move), captured, bonus);
+
+      // Decrease all the other played capture moves
+      for (int i = 0; i < captureCnt; ++i)
+      {
+          moved_piece = pos.moved_piece(captures[i]);
+          captured = type_of(pos.piece_on(to_sq(captures[i])));
+          captureHistory.update(moved_piece, to_sq(captures[i]), captured, -bonus);
+      }
+  }
+
+
+  // update_stats() updates move sorting heuristics when a new quiet best move is found
   void update_stats(const Position& pos, Stack* ss, Move move,
                     Move* quiets, int quietsCnt, int bonus) {
 
@@ -1520,6 +1500,24 @@ moves_loop: // When in check search starts from here
         thisThread->mainHistory.update(c, quiets[i], -bonus);
         update_continuation_histories(ss, pos.moved_piece(quiets[i]), to_sq(quiets[i]), -bonus);
     }
+  }
+
+
+  // Is the PV leading to a draw position? Assumes all pv moves are legal
+  bool pv_is_draw(Position& pos) {
+
+    StateInfo st[MAX_PLY];
+    auto& pv = pos.this_thread()->rootMoves[0].pv;
+
+    for (size_t i = 0; i < pv.size(); ++i)
+        pos.do_move(pv[i], st[i]);
+
+    bool isDraw = pos.is_draw(pv.size());
+
+    for (size_t i = pv.size(); i > 0; --i)
+        pos.undo_move(pv[i-1]);
+
+    return isDraw;
   }
 
 
@@ -1692,6 +1690,10 @@ void Tablebases::filter_root_moves(Position& pos, Search::RootMoves& rootMoves) 
     }
 
     if (Cardinality < popcount(pos.pieces()) || pos.can_castle(ANY_CASTLING))
+        return;
+
+    // Don't filter any moves if the user requested analysis on multiple
+    if (Options["MultiPV"] != 1)
         return;
 
     // If the current root position is in the tablebases, then RootMoves
