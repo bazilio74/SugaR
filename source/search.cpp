@@ -1,3 +1,4 @@
+
 /*
   SugaR, a UCI chess playing engine derived from Stockfish
   Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
@@ -357,7 +358,7 @@ void Thread::search() {
       mainThread->failedLow = false;
       mainThread->bestMoveChanges = 0;
   }
-
+  drawIter = 0;
   size_t multiPV = Options["MultiPV"];
   Skill skill(Options["Skill Level"]);
 
@@ -474,6 +475,11 @@ void Thread::search() {
          lastBestMoveDepth = rootDepth;
       }
 
+      if (::pv_is_draw(rootPos))
+         drawIter++;
+      else
+         drawIter=0;
+
       // Have we found a "mate in x"?
       if (   Limits.mate
           && bestValue >= VALUE_MATE_IN_MAX_PLY
@@ -499,7 +505,7 @@ void Thread::search() {
               int improvingFactor = std::max(229, std::min(715, 357 + 119 * F[0] - 6 * F[1]));
 			  
               Color us = rootPos.side_to_move();
-              bool thinkHard =    DrawValue[us] == bestValue
+			  bool thinkHard =    DrawValue[us] == bestValue
                                && Limits.time[us] - Time.elapsed() > Limits.time[~us]
                                && ::pv_is_draw(rootPos);
 
@@ -713,7 +719,7 @@ namespace {
     {
         eval = ss->staticEval =
         (ss-1)->currentMove != MOVE_NULL ? evaluate(pos)
-                                         : -(ss-1)->staticEval + 2 * Eval::Tempo;
+                                         : -(ss-1)->staticEval + 2 * Eval::tempo(pos);
 
         tte->save(posKey, VALUE_NONE, BOUND_NONE, DEPTH_NONE, MOVE_NONE,
                   ss->staticEval, TT.generation());
@@ -748,7 +754,8 @@ namespace {
     if (    doNull
         && !PvNode
         &&  eval >= beta
-        &&  ss->staticEval >= beta - 36 * depth / ONE_PLY + 225
+        &&  ss->staticEval >= beta - 36 * depth / ONE_PLY +
+          ((pos.plies_from_null() % 2 == 0 || 4 * pos.plies_from_null() > thisThread->drawIter) ? 225 : 225 + 75 * thisThread->drawIter)
         &&  pos.non_pawn_material(pos.side_to_move()))
     {
 
@@ -1276,7 +1283,7 @@ moves_loop: // When in check search starts from here
         else
             ss->staticEval = bestValue =
             (ss-1)->currentMove != MOVE_NULL ? evaluate(pos)
-                                             : -(ss-1)->staticEval + 2 * Eval::Tempo;
+                                             : -(ss-1)->staticEval + 2 * Eval::tempo(pos);
 
         // Stand pat. Return immediately if static value is at least beta
         if (bestValue >= beta)
