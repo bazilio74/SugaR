@@ -829,6 +829,9 @@ moves_loop: // When in check search starts from here
             /* || ss->staticEval == VALUE_NONE Already implicit in the previous condition */
                ||(ss-2)->staticEval == VALUE_NONE;
 
+	bool greatlyImproving = (ss - 0)->staticEval > (ss - 2)->staticEval + 16
+		 && (ss - 2)->staticEval > (ss - 4)->staticEval + 16;
+
     singularExtensionNode =   !rootNode
                            &&  depth >= 8 * ONE_PLY
                            &&  ttMove != MOVE_NONE
@@ -1027,7 +1030,12 @@ moves_loop: // When in check search starts from here
 
           Depth d = std::max(newDepth - r, ONE_PLY);
 
-          value = -search<NonPV>(pos, ss+1, -(alpha+1), -alpha, d, true, false);
+		  bool foo = PvNode && !moveCountPruning && greatlyImproving && ss->staticEval > alpha;
+		  // && "iteration depth" >= 10 * ONE_PLY;
+		  // or && "iteration depth" >= 4 * ONE_PLY
+
+          value = -search<NonPV>(pos, ss+1, -(alpha+1), -alpha, d, true, foo);
+
           doFullDepthSearch = (value > alpha && d != newDepth);
       }
       else
