@@ -128,7 +128,6 @@ const std::string engine_info(bool to_uci) {
 
   ss << "S_XPrO " << Version << setfill('0');
 
-//  ss << "Stockfish Sugar " << Version << setfill('0');
 
   if (Version.empty())
   {
@@ -141,7 +140,7 @@ const std::string engine_info(bool to_uci) {
      << (HasPext ? " BMI2" : (HasPopCnt ? " POPCNT" : ""))
      << (to_uci  ? "\nid author ": " by ")
      << "Marco Zerbinati, Sergey Aleksandrovitch Kozlov";
-
+ 
 	 return ss.str();
 }
 
