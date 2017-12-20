@@ -111,9 +111,9 @@ public:
   void load_epd_to_hash();
   std::string hashfilename = "SugaR_hash.hsh";
 
-  // The lowest order bits of the key are used to get the index of the cluster
+  // The 32 lowest order bits of the key are used to get the index of the cluster
   TTEntry* first_entry(const Key key) const {
-    return &table[(size_t)key & (clusterCount - 1)].entry[0];
+    return &table[(uint32_t(key) * uint64_t(clusterCount)) >> 32].entry[0];
   }
 
 private:

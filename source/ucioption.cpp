@@ -67,7 +67,8 @@ bool CaseInsensitiveLess::operator() (const string& s1, const string& s2) const 
 
 void init(OptionsMap& o) {
 
-  const int MaxHashMB = Is64Bit ? 1024 * 1024 : 2048;
+  // at most 2^32 clusters.
+  const int MaxHashMB = Is64Bit ? 131072 : 2048;
 
   unsigned int n = std::thread::hardware_concurrency();
   if (!n) n = 1;
@@ -99,8 +100,6 @@ void init(OptionsMap& o) {
   o["MultiPV"]                  << Option(1, 1, 500);
   o["Skill Level"]              << Option(20, 0, 20);
   o["Move Overhead"]            << Option(100, 0, 5000);
-  o["Minimum Thinking Time"]    << Option(20, 0, 5000);
-  o["Slow Mover"]               << Option(89, 10, 1000);
   o["nodestime"]                << Option(0, 0, 10000);
   o["NeverClearHash"]           << Option(false);
   o["HashFile"]                 << Option("SugaR_hash.hsh", on_HashFile);
