@@ -39,7 +39,7 @@ namespace {
     double ratio; // Which ratio of myTime we are going to use
 
     // Usage of increment follows quadratic distribution with the maximum at move 25
-    double inc = myInc * std::max(55.0, 120 - 0.12 * (moveNum - 25) * (moveNum - 25));
+    double inc = myInc * std::max(55.0, 120.0 - 0.12 * (moveNum - 25) * (moveNum - 25));
 
     // In moves-to-go we distribute time according to a quadratic function with
     // the maximum around move 20 for 40 moves in y time case.
