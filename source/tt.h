@@ -103,7 +103,7 @@ public:
   uint8_t generation() const { return generation8; }
   TTEntry* probe(const Key key, bool& found) const;
   int hashfull() const;
-  void resize(int64_t mbSize);
+  void resize(size_t mbSize);
   void clear();
   void set_hash_file_name(const std::string& fname);
   bool save();
@@ -117,7 +117,7 @@ public:
   }
 
 private:
-  int64_t  mbSize_last_used;
+  size_t  mbSize_last_used;
 
 #ifdef _WIN32
   bool large_pages_used;
