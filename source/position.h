@@ -150,7 +150,6 @@ public:
   // Other properties of the position
   Color side_to_move() const;
   int game_ply() const;
-  int plies_from_null() const;
   bool is_chess960() const;
   Thread* this_thread() const;
   bool is_draw(int ply) const;
@@ -344,10 +343,6 @@ inline Value Position::non_pawn_material() const {
 
 inline int Position::game_ply() const {
   return gamePly;
-}
-
-inline int Position::plies_from_null() const {
-  return st->pliesFromNull;
 }
 
 inline int Position::rule50_count() const {
