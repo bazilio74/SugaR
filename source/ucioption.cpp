@@ -52,7 +52,7 @@ void SaveHashtoFile(const Option&) { TT.save(); }
 void LoadHashfromFile(const Option&) { TT.load(); }
 void LoadEpdToHash(const Option&) { TT.load_epd_to_hash(); }
 
-void on_brainbook_path(const Option& o) { tzbook.init(o); }
+void on_brainbook_path(const Option& o) { tzbook.init(o, true); }
 void on_book_move2_prob(const Option& o) { tzbook.set_book_move2_probability(o); }
 
 /// Our case insensitive less() function as required by UCI protocol
