@@ -119,7 +119,7 @@ void Try_Get_LockMemory_Privileges()
 /// measured in megabytes. Transposition table consists of a power of 2 number
 /// of clusters and each cluster consists of ClusterSize number of TTEntry.
 
-void TranspositionTable::resize(int64_t mbSize) {
+void TranspositionTable::resize(size_t mbSize) {
 
   if (mbSize == 0)
       mbSize = mbSize_last_used;
@@ -246,7 +246,7 @@ void TranspositionTable::load() {
 	file.ignore(std::numeric_limits<std::streamsize>::max());
 	std::streamsize size = file.gcount();
 	file.clear();   //  Since ignore will have set eof.
-	resize(size / 1024 / 1024);
+	resize(size_t(size / 1024 / 1024));
 	file.seekg(0, std::ios::beg);
 	file.read(reinterpret_cast<char *>(table), clusterCount * sizeof(Cluster));
 }
