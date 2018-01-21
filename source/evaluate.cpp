@@ -450,6 +450,7 @@ namespace {
               & (attackedBy[Us][KING] | attackedBy[Us][QUEEN] | ~attackedBy[Us][ALL_PIECES]);
 
         int kingDanger = 0;
+		unsafeChecks = Bitboard();
 
         // Analyse the safe enemy's checks which are possible on next move
         safe  = ~pos.pieces(Them);
