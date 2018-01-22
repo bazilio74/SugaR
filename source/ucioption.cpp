@@ -99,7 +99,9 @@ void init(OptionsMap& o) {
   o["Space"]                    << Option(100, 0, 500, on_eval);
   o["MultiPV"]                  << Option(1, 1, 500);
   o["Skill Level"]              << Option(20, 0, 20);
-  o["Move Overhead"]            << Option(100, 0, 5000);
+  o["Move Overhead"]            << Option(30, 0, 5000);
+  o["Minimum Thinking Time"]    << Option(20, 0, 5000);
+  o["Slow Mover"]               << Option(89, 10, 1000);
   o["nodestime"]                << Option(0, 0, 10000);
   o["NeverClearHash"]           << Option(false);
   o["HashFile"]                 << Option("SugaR_hash.hsh", on_HashFile);
@@ -129,6 +131,8 @@ void init(OptionsMap& o) {
   o["Book Move2 Probability"]   << Option(0, 0, 100, on_book_move2_prob);
   o["BookPath"]                 << Option("Cerebellum_Light.bin", on_brainbook_path);
 }
+
+
 /// operator<<() is used to print all the options default values in chronological
 /// insertion order (the idx field) and in the format defined by the UCI protocol.
 
@@ -213,3 +217,4 @@ Option& Option::operator=(const string& v) {
 }
 
 } // namespace UCI
+

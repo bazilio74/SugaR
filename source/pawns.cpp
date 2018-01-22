@@ -169,12 +169,8 @@ namespace {
         // ... or blocked advanced pawns where the single blocker can be levered.
         else if (stoppers == SquareBB[s + Up]
                  && relative_rank(Us, s) >= RANK_5
-
                  && (shift<Up>(supported | phalanx) & ~theirPawns))
-
-
             e->passedPawns[Us] |= s;
-
 
         // Score this pawn
         if (supported | phalanx)
