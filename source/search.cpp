@@ -1343,7 +1343,6 @@ moves_loop: // When in check search starts from here
 
       // Don't search moves with negative SEE values
       if (  (!InCheck || evasionPrunable)
-          &&  type_of(move) != PROMOTION
           &&  !pos.see_ge(move))
           continue;
 
