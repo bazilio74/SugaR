@@ -379,7 +379,7 @@
     <ClCompile Include="thread.cpp" />
     <ClCompile Include="timeman.cpp" />
     <ClCompile Include="tt.cpp" />
-    <ClCompile Include="tzbook.cpp" />
+    <ClCompile Include="polybook.cpp" />
     <ClCompile Include="uci.cpp" />
     <ClCompile Include="ucioption.cpp" />
   </ItemGroup>
@@ -401,7 +401,7 @@
     <ClInclude Include="timeman.h" />
     <ClInclude Include="tt.h" />
     <ClInclude Include="types.h" />
-    <ClInclude Include="tzbook.h" />
+    <ClInclude Include="polybook.h" />
     <ClInclude Include="uci.h" />
     <ClInclude Include="VersionHelpers.h" />
   </ItemGroup>

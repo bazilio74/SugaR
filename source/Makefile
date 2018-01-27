@@ -35,12 +35,12 @@ PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 
 ### Built-in benchmark for pgo-builds
-PGOBENCH = ./$(EXE) bench
+PGOBENCH = ./$(EXE) bench 16 1 1000 default movetime
 
 ### Object files
 OBJS = benchmark.o bitbase.o bitboard.o book.o endgame.o evaluate.o main.o \
 	material.o misc.o movegen.o movepick.o pawns.o position.o psqt.o \
-	search.o thread.o timeman.o tt.o uci.o ucioption.o tzbook.o syzygy/tbprobe.o
+	search.o thread.o timeman.o tt.o uci.o ucioption.o polybook.o syzygy/tbprobe.o
 
 ### ==========================================================================
 ### Section 2. High-level Configuration
@@ -141,7 +141,7 @@ endif
 
 ### 3.1 Selecting compiler (default = gcc)
 
-CXXFLAGS += -Wall -Wcast-qual -fno-exceptions -std=c++11 $(EXTRACXXFLAGS)
+CXXFLAGS += -Wall -Wcast-qual -fno-exceptions -fno-rtti -std=c++11 $(EXTRACXXFLAGS)
 DEPENDFLAGS += -std=c++11
 LDFLAGS += $(EXTRALDFLAGS)
 

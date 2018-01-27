@@ -69,7 +69,7 @@
     <ClCompile Include="tt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tzbook.cpp">
+    <ClCompile Include="polybook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="uci.cpp">
@@ -131,7 +131,7 @@
     <ClInclude Include="types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="tzbook.h">
+    <ClInclude Include="polybook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="uci.h">

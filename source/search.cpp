@@ -2,17 +2,21 @@
   SugaR, a UCI chess playing engine derived from Stockfish
   Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
   Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
+
   Copyright (C) 2015-2017 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+
 
   SugaR is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
+
   SugaR is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
+
 
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
@@ -26,7 +30,7 @@
 #include <sstream>
 
 #include "book.h"
-#include "tzbook.h"
+#include "polybook.h"
 #include "evaluate.h"
 #include "misc.h"
 #include "movegen.h"
@@ -97,11 +101,12 @@ namespace {
     int level;
     Move best = MOVE_NONE;
   };
-
   
+  int variety;
+  int tactical;
   bool doNull;
   bool cleanSearch;
-
+  
   template <NodeType NT>
   Value search(Position& pos, Stack* ss, Value alpha, Value beta, Depth depth, bool cutNode, bool skipEarlyPruning);
 
@@ -146,10 +151,11 @@ namespace {
 
 
 /// Search::init() is called during startup to initialize various lookup tables
+
 void Search::init(bool OptioncleanSearch) {
 
   cleanSearch = OptioncleanSearch;
-	
+
   for (int imp = 0; imp <= 1; ++imp)
       for (int d = 1; d < 64; ++d)
           for (int mc = 1; mc < 64; ++mc)
@@ -175,18 +181,18 @@ void Search::init(bool OptioncleanSearch) {
 /// Search::clear() resets search state to its initial value
 
 void Search::clear() {
-                                                                                                            
-  if (Options["NeverClearHash"])
-	return;
+
 
   Threads.main()->wait_for_search_finished();
 
   Time.availableNodes = 0;
+
   Threads.main()->wait_for_search_finished();
 
   Time.availableNodes = 0;
   TT.clear();
   Threads.clear();
+
 
 }
 
@@ -205,6 +211,7 @@ void MainThread::search() {
 
   static PolyglotBook book; // Defined static to initialize the PRNG only once
 
+
   Color us = rootPos.side_to_move();
   Time.init(Limits, us, rootPos.game_ply());
   if (!Limits.infinite)
@@ -212,14 +219,17 @@ void MainThread::search() {
   else
   TT.infinite_search();
 
-  doNull = Options["NullMove"];
-
 
   int contempt = Options["Contempt"] * PawnValueEg / 100; // From centipawns
 
   Eval::Contempt = (us == WHITE ?  make_score(contempt, contempt / 2)
                                 : -make_score(contempt, contempt / 2));
 
+  // Read search options
+  variety  = Options["Variety"];
+  doNull   = Options["NullMove"];
+  tactical =  Options["Analysis Mode"];
+  
   if (rootMoves.empty())
   {
       rootMoves.emplace_back(MOVE_NONE);
@@ -242,22 +252,21 @@ void MainThread::search() {
       Move bookMove = MOVE_NONE;
 
       if (!Limits.infinite && !Limits.mate)
-          bookMove = tzbook.probe2(rootPos);
+          bookMove = polybook.probe(rootPos);
 
       if (bookMove && std::count(rootMoves.begin(), rootMoves.end(), bookMove))
       {
-          std::swap(rootMoves[0], *std::find(rootMoves.begin(), rootMoves.end(), bookMove));
-      for (Thread* th : Threads)
-              if (th != this)
-                 std::swap(th->rootMoves[0], *std::find(th->rootMoves.begin(), th->rootMoves.end(), bookMove));
+          for (Thread* th : Threads)
+              std::swap(th->rootMoves[0], *std::find(th->rootMoves.begin(), th->rootMoves.end(), bookMove));
       }
       else
       {
           for (Thread* th : Threads)
-          if (th != this)
-              th->start_searching();
+              if (th != this)
+                  th->start_searching();
 
-      Thread::search(); // Let's start searching!
+
+          Thread::search(); // Let's start searching!
       }
   }
 
@@ -351,8 +360,8 @@ void Thread::search() {
 
   size_t multiPV = Options["MultiPV"];
   Skill skill(Options["Skill Level"]);
-
-  if (Options["Analysis Mode"]) multiPV=256;
+  if (tactical) multiPV = pow(2, tactical);
+  if (::pv_is_draw(rootPos)) multiPV = 8 ;
   
   // When playing with strength handicap enable MultiPV search that we will
   // use behind the scenes to retrieve a set of possible moves.
@@ -392,6 +401,8 @@ void Thread::search() {
           // Reset aspiration window starting size
           if (rootDepth >= 5 * ONE_PLY)
           {
+
+
               delta = Value(18);
               alpha = std::max(rootMoves[PVIdx].previousScore - delta,-VALUE_INFINITE);
               beta  = std::min(rootMoves[PVIdx].previousScore + delta, VALUE_INFINITE);
@@ -625,6 +636,7 @@ namespace {
             {
                 if (!pos.capture_or_promotion(ttMove))
                     update_stats(pos, ss, ttMove, nullptr, 0, stat_bonus(depth));
+
                 else if(type_of(ttMove) == PROMOTION || !pos.see_ge(ttMove, VALUE_ZERO))
 				{
 					if (ss->killers[2] != ttMove)
@@ -735,10 +747,14 @@ namespace {
 
     // Step 8. Null move search with verification search (is omitted in PV nodes)
     if (    doNull
+
         && !PvNode
         &&  eval >= beta
         &&  ss->staticEval >= beta - 36 * depth / ONE_PLY + 225
+
         && (ss->ply >= thisThread->nmp_ply || ss->ply % 2 != thisThread->nmp_odd))
+
+
     {
 
         assert(eval - beta >= 0);
@@ -847,6 +863,7 @@ moves_loop: // When in check search starts from here
                            &&  tte->depth() >= depth - 3 * ONE_PLY;
     skipQuiets = false;
     ttCapture = false;
+
     pvExact = PvNode && ttHit && tte->bound() == BOUND_EXACT;
 
     // Step 11. Loop through moves
@@ -999,7 +1016,6 @@ moves_loop: // When in check search starts from here
               // Increase reduction if ttMove is a capture
               if (ttCapture)
                   r += ONE_PLY;
-
               // Increase reduction for cut nodes
               if (cutNode)
                   r += 2 * ONE_PLY;
@@ -1027,12 +1043,7 @@ moves_loop: // When in check search starts from here
               // Decrease/increase reduction for moves with a good/bad history
               r = std::max(DEPTH_ZERO, (r / ONE_PLY - ss->statScore / 20000) * ONE_PLY);
           }
-          // The "Analysis Mode" option looks SugaR to look at more positions per search depth, but SugaR will play
-          // weaker overall.  It also sets the "MultiPV" option to 256 to allow SugaR to look at more nodes per
-          // depth and may help in analysis.
-		  if ( ( ss->ply < depth / 2 - ONE_PLY) && Options["Analysis Mode"] )
-		    r = DEPTH_ZERO;
-		
+
 
           Depth d = std::max(newDepth - r, ONE_PLY);
 
