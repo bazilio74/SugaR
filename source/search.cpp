@@ -182,6 +182,9 @@ void Search::init(bool OptioncleanSearch) {
 
 void Search::clear() {
 
+  if (Options["NeverClearHash"])
+	return;
+
   Threads.main()->wait_for_search_finished();
 
   Time.availableNodes = 0;

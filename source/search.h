@@ -99,6 +99,7 @@ struct LimitsType {
 
 extern LimitsType Limits;
 void init(bool OptioncleanSearch);
+			
 void clear();
 
 } // namespace Search
