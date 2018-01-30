@@ -79,8 +79,6 @@ void init(OptionsMap& o) {
   o["Threads"]                  << Option(n, 1, 512, on_threads);
   o["Hash"]                     << Option(16, 1, MaxHashMB, on_hash_size);
   o["Clear_Hash"]            << Option(on_clear_hash);
-                           
-  o["Clean Search"]             << Option(false);
   o["Ponder"]                   << Option(false);
 
   //Add evaluation weights.
@@ -120,8 +118,9 @@ void init(OptionsMap& o) {
   //Correspondence section
   o["Correspondence Chess Analyzer"]     << Option();
   o["Analysis Mode"]            << Option(0, 0,  8);
+  o["Clean Search"]             << Option(false);
   o["NullMove"]                 << Option(true);
- 
+
  //Polyglot Book management
   o["Polyglot Book management"] << Option();
   o["OwnBook"]                  << Option(false);
