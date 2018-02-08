@@ -75,6 +75,7 @@ namespace {
   const int skipSize[]  = { 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4 };
   const int skipPhase[] = { 0, 1, 0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7 };
 
+  // Razoring and futility margin based on depth
   const int razor_margin = 600;
   Value futility_margin(Depth d) { return Value(150 * d / ONE_PLY); }
 
@@ -741,7 +742,6 @@ namespace {
 
     // Step 6. Razoring (skipped when in check)
     if (   !PvNode
-
         &&  depth < 4 * ONE_PLY
         &&  eval + razor_margin <= alpha)
     {
@@ -994,6 +994,7 @@ moves_loop: // When in check search starts from here
       // Update the current move (this must be done after singular extension search)
       ss->currentMove = move;
       ss->contHistory = &thisThread->contHistory[movedPiece][to_sq(move)];
+
       // Step 14. Make the move
       pos.do_move(move, st, givesCheck);
 
