@@ -217,8 +217,19 @@ void MainThread::search() {
 
   int contempt = Options["Contempt"] * PawnValueEg / 100; // From centipawns
 
+  // Follow user preference for contempt in analysis mode
+  if (Limits.infinite || Options["UCI_AnalyseMode"])
+      contempt = Options["Analysis Contempt"] == "Off"  ? 0 :
+                 Options["Analysis Contempt"] == "Both" ? contempt :
+                 Options["Analysis Contempt"] == "Black" && us == WHITE ? -contempt :
+                 Options["Analysis Contempt"] == "White" && us == BLACK ? -contempt :
+                 contempt;
+
+  // In evaluate.cpp the evaluation is from the white point of view
   Eval::Contempt = (us == WHITE ?  make_score(contempt, contempt / 2)
                                 : -make_score(contempt, contempt / 2));
+
+
   // Read search options
   doNull   = Options["NullMove"];
   tactical =  Options["Analysis Mode"];
@@ -354,7 +365,6 @@ void Thread::search() {
   size_t multiPV = Options["MultiPV"];
   Skill skill(Options["Skill Level"]);
   if (tactical) multiPV = pow(2, tactical);
-  if (::pv_is_draw(rootPos)) multiPV = 8 ;
   
   // When playing with strength handicap enable MultiPV search that we will
   // use behind the scenes to retrieve a set of possible moves.
@@ -1514,25 +1524,6 @@ moves_loop: // When in check search starts from here
         update_continuation_histories(ss, pos.moved_piece(quiets[i]), to_sq(quiets[i]), -bonus);
     }
   }
-
-
-  // Is the PV leading to a draw position? Assumes all pv moves are legal
-  bool pv_is_draw(Position& pos) {
-
-    StateInfo st[MAX_PLY];
-    auto& pv = pos.this_thread()->rootMoves[0].pv;
-
-    for (size_t i = 0; i < pv.size(); ++i)
-        pos.do_move(pv[i], st[i]);
-
-    bool isDraw = pos.is_draw(pv.size());
-
-    for (size_t i = pv.size(); i > 0; --i)
-        pos.undo_move(pv[i-1]);
-
-    return isDraw;
-  }
-
 
   // When playing with strength handicap, choose best move among a set of RootMoves
   // using a statistical rule dependent on 'level'. Idea by Heinz van Saanen.
