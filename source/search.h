@@ -45,7 +45,7 @@ struct Stack {
   int ply;
   Move currentMove;
   Move excludedMove;
-  Move killers[2];
+  Move killers[4];
   Value staticEval;
   int statScore;
   int moveCount;
@@ -99,6 +99,7 @@ struct LimitsType {
 
 extern LimitsType Limits;
 void init(bool OptioncleanSearch);
+			
 void clear();
 
 } // namespace Search

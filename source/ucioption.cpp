@@ -31,7 +31,7 @@
 #include "tt.h"
 #include "uci.h"
 #include "syzygy/tbprobe.h"
-#include "tzbook.h"
+#include "polybook.h"
 
 using std::string;
 
@@ -52,8 +52,9 @@ void SaveHashtoFile(const Option&) { TT.save(); }
 void LoadHashfromFile(const Option&) { TT.load(); }
 void LoadEpdToHash(const Option&) { TT.load_epd_to_hash(); }
 
-void on_brainbook_path(const Option& o) { tzbook.init(o, true); }
-void on_book_move2_prob(const Option& o) { tzbook.set_book_move2_probability(o); }
+void on_book_file(const Option& o) { polybook.init(o); }
+void on_best_book_move(const Option& o) { polybook.set_best_book_move(o); }
+void on_book_depth(const Option& o) { polybook.set_book_depth(o); }
 
 /// Our case insensitive less() function as required by UCI protocol
 bool CaseInsensitiveLess::operator() (const string& s1, const string& s2) const {
@@ -74,11 +75,11 @@ void init(OptionsMap& o) {
   if (!n) n = 1;
   
   o["Debug Log File"]           << Option("", on_logger);
-  o["Contempt"]                 << Option(0, -100, 100);
+  o["Contempt"]                 << Option(20, -100, 100);
+  o["Analysis Contempt"]        << Option("Both var Off var White var Black var Both", "Both");
   o["Threads"]                  << Option(n, 1, 512, on_threads);
   o["Hash"]                     << Option(16, 1, MaxHashMB, on_hash_size);
-  o["Clear Hash"]               << Option(on_clear_hash);
-  o["Clean Search"]             << Option(false);
+  o["Clear_Hash"]               << Option(on_clear_hash);
   o["Ponder"]                   << Option(false);
 
   //Add evaluation weights.
@@ -99,7 +100,9 @@ void init(OptionsMap& o) {
   o["Space"]                    << Option(100, 0, 500, on_eval);
   o["MultiPV"]                  << Option(1, 1, 500);
   o["Skill Level"]              << Option(20, 0, 20);
-  o["Move Overhead"]            << Option(100, 0, 5000);
+  o["Move Overhead"]            << Option(30, 0, 5000);
+  o["Minimum Thinking Time"]    << Option(20, 0, 5000);
+  o["Slow Mover"]               << Option(89, 10, 1000);
   o["nodestime"]                << Option(0, 0, 10000);
   o["NeverClearHash"]           << Option(false);
   o["HashFile"]                 << Option("SugaR_hash.hsh", on_HashFile);
@@ -107,6 +110,7 @@ void init(OptionsMap& o) {
   o["LoadHashfromFile"]         << Option(LoadHashfromFile);
   o["LoadEpdToHash"]            << Option(LoadEpdToHash);
   o["UCI_Chess960"]             << Option(false);
+  o["UCI_AnalyseMode"]       << Option(false);
   o["SyzygyPath"]            << Option("<empty>", on_tb_path);
   o["SyzygyProbeDepth"]      << Option(1, 1, 100);
   o["Syzygy50MoveRule"]      << Option(true);
@@ -115,9 +119,10 @@ void init(OptionsMap& o) {
   
   //Correspondence section
   o["Correspondence Chess Analyzer"]     << Option();
-  o["Analysis Mode"]            << Option(false);
+  o["Analysis Mode"]            << Option(0, 0,  8);
+  o["Clean Search"]             << Option(false);
   o["NullMove"]                 << Option(true);
- 
+
  //Polyglot Book management
   o["Polyglot Book management"] << Option();
   o["OwnBook"]                  << Option(false);
@@ -125,10 +130,13 @@ void init(OptionsMap& o) {
   o["Book File"]                << Option("book.bin");
 
   //Cerebellum Book Library
-  o["Cerebellum Library"]       << Option();
-  o["Book Move2 Probability"]   << Option(0, 0, 100, on_book_move2_prob);
-  o["BookPath"]                 << Option("Cerebellum_Light.bin", on_brainbook_path);
+  o["Cerebellum Book Library"]  << Option();
+  o["BookFile"]              << Option("Cerebellum_Light.bin", on_book_file);
+  o["BestBookMove"]          << Option(true, on_best_book_move);
+  o["BookDepth"]             << Option(255, 1, 255, on_book_depth);   
 }
+
+
 /// operator<<() is used to print all the options default values in chronological
 /// insertion order (the idx field) and in the format defined by the UCI protocol.
 
@@ -168,6 +176,9 @@ Option::Option(OnChange f) : type("button"), min(0), max(0), on_change(f)
 Option::Option(int v, int minv, int maxv, OnChange f) : type("spin"), min(minv), max(maxv), on_change(f)
 { defaultValue = currentValue = std::to_string(v); }
 
+Option::Option(const char* v, const char* cur, OnChange f) : type("combo"), min(0), max(0), on_change(f)
+{ defaultValue = v; currentValue = cur; }
+
 Option::operator int() const {
   assert(type == "check" || type == "spin");
   return (type == "spin" ? stoi(currentValue) : currentValue == "true");
@@ -176,6 +187,11 @@ Option::operator int() const {
 Option::operator std::string() const {
   assert(type == "string");
   return currentValue;
+}
+
+bool Option::operator==(const char* s) {
+  assert(type == "combo");
+  return currentValue == s;
 }
 
 

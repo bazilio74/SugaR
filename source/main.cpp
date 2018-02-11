@@ -34,7 +34,7 @@
 #include "tt.h"
 #include "uci.h"
 #include "syzygy/tbprobe.h"
-#include "tzbook.h"
+#include "polybook.h"
 
 
 #include <time.h>
@@ -80,21 +80,24 @@ int main(int argc, char* argv[]) {
 	std::cout << engine_info() << std::endl;
 	std::cout << cores_info() << std::endl;
 
-	UCI::init(Options);
-	PSQT::init();
-	Bitboards::init();
-	Position::init();
-	Bitbases::init();
-	Eval::init();
-	Search::init(Options["Clean Search"]);
-	Pawns::init();
-	Tablebases::init(Options["SyzygyPath"]);
-	TT.resize(Options["Hash"]);
-	Threads.init(Options["Threads"]);
-	Search::clear(); // After threads are up
-	tzbook.init(Options["BookPath"]);
-	UCI::loop(argc, argv);
+  UCI::init(Options);
+  PSQT::init();
+  Bitboards::init();
+  Position::init();
 
-	Threads.exit();
-	return 0;
+  Bitbases::init();
+  Eval::init();
+  Search::init(Options["Clean Search"]);
+  Pawns::init();
+  Tablebases::init(Options["SyzygyPath"]);
+  TT.resize(Options["Hash"]);
+  Threads.set(Options["Threads"]);
+  polybook.init(Options["BookFile"]);
+  Search::clear(); // After threads are up
+
+
+  UCI::loop(argc, argv);
+
+  Threads.set(0);
+  return 0;
 }
