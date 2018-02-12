@@ -23,7 +23,7 @@ This distribution of SugaR consists of the following files:
 
   * Copying.txt, a text file containing the GNU General Public License.
 
-  * src, a subdirectory containing the full source code, including a Makefile
+  * source, a subdirectory containing the full source code, including a Makefile
     that can be used to compile SugaR on Unix-like systems.
 
 
