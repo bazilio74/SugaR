@@ -3,7 +3,7 @@
 SugaR is a free UCI chess engine derived from Stockfish. It is
 not a complete chess program and requires some UCI-compatible GUI
 (e.g. XBoard with PolyGlot, eboard, Arena, Sigma Chess, Shredder, Chess
-Partner, "Chess Ok Aquarium" or Fritz) in order to be used comfortably. Read the
+Partner, Aquarium or Fritz) in order to be used comfortably. Read the
 documentation for your GUI of choice for information about how to use
 SugaR with it.
 
@@ -87,9 +87,13 @@ directly from the source code with the included Makefile.
 SugaR has support for 32 or 64-bit CPUs, the hardware POPCNT
 instruction, big-endian machines such as Power PC, and other platforms.
 
+On Windows-like systems, it should be possible to compile SugaR
+directly from the source code with the included Sugar.sln with Visual Studio 15.3 Community 
+from GUI or with command scenario using Visual Studio 15.3 Community Commands Shell.
+
 In general it is recommended to run `make help` to see a list of make
 targets with corresponding descriptions. When not using the Makefile to
-compile (for instance with Microsoft MSVC) you need to manually
+compile you need to manually
 set/unset some switches in the compiler command line or use MSVC solution and project files provided; see file *types.h*
 for a quick reference.
 
