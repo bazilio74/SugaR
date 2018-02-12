@@ -3,7 +3,7 @@
 SugaR is a free UCI chess engine derived from Stockfish. It is
 not a complete chess program and requires some UCI-compatible GUI
 (e.g. XBoard with PolyGlot, eboard, Arena, Sigma Chess, Shredder, Chess
-Partner, "Chess Ok Aquarium" or Fritz) in order to be used comfortably. Read the
+Partner, Aquarium or Fritz) in order to be used comfortably. Read the
 documentation for your GUI of choice for information about how to use
 SugaR with it.
 
