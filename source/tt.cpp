@@ -94,7 +94,7 @@ void Try_Get_LockMemory_Privileges()
 {
     use_large_pages = 0;
 
-    if (Options["Large Pages"] == false)    
+    if (bool(Options["Large Pages"]) == false)    
         return;
 
     if (got_privileges == -1)
