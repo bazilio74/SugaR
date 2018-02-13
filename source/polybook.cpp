@@ -349,7 +349,7 @@ void PolyBook::init(const std::string& bookfile)
 	{
 		assert(errno_local != 0);
 #else
-    FILE *fpt = fopen(fnam, "rb");
+    FILE *fpt = fopen(file_name, "rb");
     if (fpt == NULL)
     {
 #endif
