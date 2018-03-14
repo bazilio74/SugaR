@@ -20,6 +20,7 @@
 
 #include <cstring>   // For std::memset
 #include <iostream>
+//Hash
 #include <fstream>
 #include "uci.h"
 using std::string;
@@ -30,17 +31,13 @@ using std::string;
 #include <iterator>
 #include "position.h"
 #include "thread.h"
+//end_Hash  
 #include "bitboard.h"
+
 #include "tt.h"
 
-#ifdef _WIN32
 
-#include <windows.h>
-#undef max
-#undef min
-
-#endif
-
+//Hash	
 //https://stackoverflow.com/questions/236129/most-elegant-way-to-split-a-string
 template<typename Out>
 void split(const std::string &s, char delim, Out result) {
@@ -57,63 +54,9 @@ std::vector<std::string> split(const std::string &s, char delim) {
 	split(s, delim, std::back_inserter(elems));
 	return elems;
 }
-
+//end_Hash	
 TranspositionTable TT; // Our global transposition table
-#ifdef _WIN32
-int use_large_pages = -1;
-int got_privileges = -1;
-#endif
 
-#ifdef _WIN32
-bool Get_LockMemory_Privileges()
-{
-    HANDLE TH, PROC7;
-    TOKEN_PRIVILEGES tp;
-    bool ret = false;
-
-    PROC7 = GetCurrentProcess();
-    if (OpenProcessToken(PROC7, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &TH))
-    {
-        if (LookupPrivilegeValue(NULL, TEXT("SeLockMemoryPrivilege"), &tp.Privileges[0].Luid))
-        {
-            tp.PrivilegeCount = 1;
-            tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-            if (AdjustTokenPrivileges(TH, FALSE, &tp, 0, NULL, 0))
-            {
-                if (GetLastError() != ERROR_NOT_ALL_ASSIGNED)
-                    ret = true;
-            }
-        }
-        CloseHandle(TH);
-    }
-    return ret;
-}
-
-
-void Try_Get_LockMemory_Privileges()
-{
-    use_large_pages = 0;
-
-    if (bool(Options["Large Pages"]) == false)    
-        return;
-
-    if (got_privileges == -1)
-    {
-        if (Get_LockMemory_Privileges() == true)
-            got_privileges = 1;
-        else
-        {
-            sync_cout << "No Privilege for Large Pages" << sync_endl;
-            got_privileges = 0;
-        }
-    }
-
-    if (got_privileges == 0)      
-        return;
-
-    use_large_pages = 1;        
-}
-#endif
 
 /// TranspositionTable::resize() sets the size of the transposition table,
 /// measured in megabytes. Transposition table consists of a power of 2 number
@@ -121,92 +64,25 @@ void Try_Get_LockMemory_Privileges()
 
 void TranspositionTable::resize(size_t mbSize) {
 
-  if (mbSize == 0)
-      mbSize = mbSize_last_used;
-
-  if (mbSize == 0)
-      return;
-
-  mbSize_last_used = mbSize;
-
-#ifdef _WIN32
-  Try_Get_LockMemory_Privileges();
-#endif
-
   size_t newClusterCount = mbSize * 1024 * 1024 / sizeof(Cluster);
 
   if (newClusterCount == clusterCount)
-  {
-#ifdef _WIN32
-      if ((use_large_pages == 1) && (large_pages_used))      
-          return;
-      if ((use_large_pages == 0) && (large_pages_used == false))
-#endif
-          return;
-  }
+      return;
 
   clusterCount = newClusterCount;
- 
-#ifdef _WIN32
-  if (use_large_pages < 1)
-#endif
-  {
-      if (mem != NULL)
-      {
-#ifdef _WIN32
-          if (large_pages_used)
-              VirtualFree(mem, 0, MEM_RELEASE);
-          else
-#endif
-              free(mem);
-      }
 
-      size_t memsize = clusterCount * sizeof(Cluster) + CacheLineSize - 1;
-      mem = calloc(memsize, 1);
-#ifdef _WIN32
-      large_pages_used = false;
-#endif
-  }
-#ifdef _WIN32
-  else
-  {
-      if (mem != NULL)
-      {
-          if (large_pages_used)
-              VirtualFree(mem, 0, MEM_RELEASE);
-          else
-              free(mem);
-      }
-
-      size_t memsize = clusterCount * sizeof(Cluster);
-      mem = VirtualAlloc(NULL, memsize, MEM_LARGE_PAGES | MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-      if (mem == NULL)
-      {
-          std::cerr << "Failed to allocate " << mbSize
-              << "MB Large Page Memory for transposition table, switching to default" << std::endl;
-
-          use_large_pages = 0;
-          memsize = clusterCount * sizeof(Cluster) + CacheLineSize - 1;
-          mem = calloc(memsize, 1);
-          large_pages_used = false;
-      }
-      else
-      {
-          sync_cout << "info string LargePages " << (memsize >> 20) << " MiB" << sync_endl;
-          large_pages_used = true;
-      }
-        
-  }
-#endif
+  free(mem);
+  mem = malloc(clusterCount * sizeof(Cluster) + CacheLineSize - 1);
 
   if (!mem)
   {
       std::cerr << "Failed to allocate " << mbSize
-                << "MiB for transposition table." << std::endl;
+                << "MB for transposition table." << std::endl;
       exit(EXIT_FAILURE);
   }
 
   table = (Cluster*)((uintptr_t(mem) + CacheLineSize - 1) & ~(CacheLineSize - 1));
+  clear();
 }
 
 
@@ -219,6 +95,7 @@ void TranspositionTable::clear() {
   std::memset(table, 0, clusterCount * sizeof(Cluster));
 }
 
+//Hash
 void TranspositionTable::set_hash_file_name(const std::string& fname) { hashfilename = fname; }
 
 bool TranspositionTable::save() {
@@ -555,6 +432,7 @@ void TranspositionTable::load_epd_to_hash() {
 		myfile.close();
 	}
 }
+//end_Hash
 
 /// TranspositionTable::probe() looks up the current position in the transposition
 /// table. It returns true and a pointer to the TTEntry if the position is found.
@@ -568,18 +446,18 @@ TTEntry* TranspositionTable::probe(const Key key, bool& found) const {
   TTEntry* const tte = first_entry(key);
   const uint16_t key16 = key >> 48;  // Use the high 16 bits as key inside the cluster
 
-  for (size_t i = 0; i < ClusterSize; ++i)
+  for (int i = 0; i < ClusterSize; ++i)
       if (!tte[i].key16 || tte[i].key16 == key16)
       {
           if ((tte[i].genBound8 & 0xFC) != generation8 && tte[i].key16)
-              tte[i].genBound8 += 4; // Refresh
+              tte[i].genBound8 = uint8_t(generation8 | tte[i].bound()); // Refresh
 
           return found = (bool)tte[i].key16, &tte[i];
       }
 
   // Find an entry to be replaced according to the replacement strategy
   TTEntry* replace = tte;
-  for (size_t i = 1; i < ClusterSize; ++i)
+  for (int i = 1; i < ClusterSize; ++i)
       // Due to our packed storage format for generation and its cyclic
       // nature we add 259 (256 is the modulus plus 3 to keep the lowest
       // two bound bits from affecting the result) to calculate the entry
@@ -598,10 +476,10 @@ TTEntry* TranspositionTable::probe(const Key key, bool& found) const {
 int TranspositionTable::hashfull() const {
 
   int cnt = 0;
-  for (size_t i = 0; i < 1000 / ClusterSize; i++)
+  for (int i = 0; i < 1000 / ClusterSize; i++)
   {
       const TTEntry* tte = &table[i].entry[0];
-      for (size_t j = 0; j < ClusterSize; j++)
+      for (int j = 0; j < ClusterSize; j++)
           if ((tte[j].genBound8 & 0xFC) == generation8)
               cnt++;
   }

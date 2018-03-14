@@ -24,10 +24,9 @@
 #include <chrono>
 #include <functional>
 #include <atomic>
-
+#include <time.h>
 
 #include "bitboard.h"
-#include "evaluate.h"
 #include "position.h"
 #include "search.h"
 #include "thread.h"
@@ -35,9 +34,6 @@
 #include "uci.h"
 #include "syzygy/tbprobe.h"
 #include "polybook.h"
-
-
-#include <time.h>
 
 namespace PSQT {
 	void init();
@@ -84,17 +80,14 @@ int main(int argc, char* argv[]) {
   PSQT::init();
   Bitboards::init();
   Position::init();
-
   Bitbases::init();
-  Eval::init();
-  Search::init(Options["Clean Search"]);
+  Search::init();
   Pawns::init();
   Tablebases::init(Options["SyzygyPath"]);
   TT.resize(Options["Hash"]);
   Threads.set(Options["Threads"]);
   polybook.init(Options["BookFile"]);
   Search::clear(); // After threads are up
-
 
   UCI::loop(argc, argv);
 

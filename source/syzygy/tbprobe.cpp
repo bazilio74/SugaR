@@ -1,7 +1,8 @@
 /*
   SugaR, a UCI chess playing engine derived from Stockfish
-  Copyright (c) 2013 Ronald de Man
-  Copyright (C) 2016-2017 Marco Costalba, Lucas Braesch
+  Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
+  Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
+  Copyright (C) 2015-2017 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
 
   SugaR is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -133,7 +134,7 @@ struct Atomic {
     std::atomic_bool ready;
 };
 
-// We define types for the different parts of the WLDEntry and DTZEntry with
+// We define types for the different parts of the WDLEntry and DTZEntry with
 // corresponding specializations for pieces or pawns.
 
 struct WDLEntryPiece {
@@ -539,7 +540,7 @@ int decompress_pairs(PairsData* d, uint64_t idx) {
     //       I(k) = k * d->span + d->span / 2      (1)
 
     // First step is to get the 'k' of the I(k) nearest to our idx, using definition (1)
-    uint64_t k = idx / d->span;
+    uint32_t k = idx / d->span;
 
     // Then we read the corresponding SparseIndex[] entry
     uint32_t block = number<uint32_t, LittleEndian>(&d->sparseIndex[k].block);
@@ -585,9 +586,7 @@ int decompress_pairs(PairsData* d, uint64_t idx) {
         // All the symbols of a given length are consecutive integers (numerical
         // sequence property), so we can compute the offset of our symbol of
         // length len, stored at the beginning of buf64.
-		uint64_t uint16_local = (buf64 - d->base64[len]) >> (64 - len - d->minSymLen);
-		assert(uint16_local > UINT16_MAX);
-        sym = uint16_t(uint16_local);
+        sym = (buf64 - d->base64[len]) >> (64 - len - d->minSymLen);
 
         // Now add the value of the lowest symbol of length len to get our symbol
         sym += number<Sym, LittleEndian>(&d->lowestSym[len]);
@@ -998,9 +997,7 @@ uint8_t* set_sizes(PairsData* d, uint8_t* data) {
 
     // groupLen[] is a zero-terminated list of group lengths, the last groupIdx[]
     // element stores the biggest index that is the tb size.
-	uint64_t uint64_local = d->groupIdx[std::find(d->groupLen, d->groupLen + 7, 0) - d->groupLen];
-	assert(uint64_local > (sizeof(size_t)<<8) - 1);
-    size_t tbSize = size_t(uint64_local);
+    uint64_t tbSize = d->groupIdx[std::find(d->groupLen, d->groupLen + 7, 0) - d->groupLen];
 
     d->sizeofBlock = 1ULL << *data++;
     d->span = 1ULL << *data++;

@@ -45,7 +45,7 @@ struct Stack {
   int ply;
   Move currentMove;
   Move excludedMove;
-  Move killers[4];
+  Move killers[2];
   Value staticEval;
   int statScore;
   int moveCount;
@@ -92,14 +92,13 @@ struct LimitsType {
   std::vector<Move> searchmoves;
   int time[COLOR_NB], inc[COLOR_NB], npmsec, movestogo, depth,
       movetime, mate, perft, infinite;
-
   int64_t nodes;
   TimePoint startTime;
 };
 
 extern LimitsType Limits;
-void init(bool OptioncleanSearch);
-			
+
+void init();
 void clear();
 
 } // namespace Search
