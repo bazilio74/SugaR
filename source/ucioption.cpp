@@ -43,6 +43,7 @@ namespace UCI {
 /// 'On change' actions, triggered by an option's value change
 void on_clear_hash(const Option&) { Search::clear(); }
 void on_hash_size(const Option& o) { TT.resize(o); }
+void on_large_pages(const Option& o) { TT.resize(o); }  // warning is ok, will be removed
 void on_logger(const Option& o) { start_logger(o); }
 void on_threads(const Option& o) { Threads.set(o); }
 void on_tb_path(const Option& o) { Tablebases::init(o); }
@@ -77,6 +78,8 @@ void init(OptionsMap& o) {
   
   o["Debug Log File"]        << Option("", on_logger);
   o["Contempt"]              << Option(12, -100, 100);
+  o["Analysis Contempt"]     << Option("Off var Off var White var Black var Both", "Off");
+  o["Large Pages"]           << Option(true, on_large_pages);
   o["Threads"]               << Option(n, 1, 512, on_threads);
   o["Hash"]                  << Option(128, 1, MaxHashMB, on_hash_size);
   o["Clear Hash"]            << Option(on_clear_hash);
@@ -151,6 +154,9 @@ Option::Option(OnChange f) : type("button"), min(0), max(0), on_change(f)
 Option::Option(int v, int minv, int maxv, OnChange f) : type("spin"), min(minv), max(maxv), on_change(f)
 { defaultValue = currentValue = std::to_string(v); }
 
+Option::Option(const char* v, const char* cur, OnChange f) : type("combo"), min(0), max(0), on_change(f)
+{ defaultValue = v; currentValue = cur; }
+
 Option::operator int() const {
   assert(type == "check" || type == "spin");
   return (type == "spin" ? stoi(currentValue) : currentValue == "true");
@@ -159,6 +165,11 @@ Option::operator int() const {
 Option::operator std::string() const {
   assert(type == "string");
   return currentValue;
+}
+
+bool Option::operator==(const char* s) {
+  assert(type == "combo");
+  return !CaseInsensitiveLess()(currentValue, s) && !CaseInsensitiveLess()(s, currentValue);
 }
 
 
