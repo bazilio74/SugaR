@@ -306,7 +306,7 @@ const std::string hardware_info()
 		result << "  CPU Core           : " << siSysInfo.dwNumberOfProcessors << std::endl;
 		//result << "  Processor type     : " << siSysInfo.dwProcessorType << std::endl;
 
-		// Use to convert bytes to MB
+		// Used to convert bytes to MB
 		const size_t local_1000_000 = 1000 * 1000;
 
 		MEMORYSTATUSEX statex;

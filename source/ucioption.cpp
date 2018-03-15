@@ -112,6 +112,7 @@ void init(OptionsMap& o) {
   o["BookFile"]              << Option("Cerebellum_Light_Poly.bin", on_book_file);
   o["BestBookMove"]          << Option(true, on_best_book_move);
   o["BookDepth"]             << Option(255, 1, 255, on_book_depth);   
+  o["Junior Depth"]			 << Option(MAX_PLY, 1, MAX_PLY);
 }
 
 
