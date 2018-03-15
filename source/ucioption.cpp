@@ -90,6 +90,7 @@ void init(OptionsMap& o) {
   o["Minimum Thinking Time"] << Option(20, 0, 5000);
   o["Slow Mover"]            << Option(84, 10, 1000);
   o["nodestime"]             << Option(0, 0, 10000);
+  o["Junior Depth"]			 << Option(MAX_PLY, 1, MAX_PLY);
   o["NeverClearHash"]           << Option(false);
   o["HashFile"]                 << Option("SugaR_hash.hsh", on_HashFile);
   o["SaveHashtoFile"]           << Option(SaveHashtoFile);
@@ -112,7 +113,6 @@ void init(OptionsMap& o) {
   o["BookFile"]              << Option("Cerebellum_Light_Poly.bin", on_book_file);
   o["BestBookMove"]          << Option(true, on_best_book_move);
   o["BookDepth"]             << Option(255, 1, 255, on_book_depth);   
-  o["Junior Depth"]			 << Option(MAX_PLY, 1, MAX_PLY);
 }
 
 
