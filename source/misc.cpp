@@ -53,7 +53,7 @@ namespace {
 
 /// Version number. If Version is left empty, then compile date in the format
 /// DD-MM-YY and show in engine_info.
-static const string Version = " ";
+const string Version = "";
 
 /// Our fancy logging facility. The trick here is to replace cin.rdbuf() and
 /// cout.rdbuf() with two Tie objects that tie cin and cout to a file stream. We
@@ -118,16 +118,13 @@ public:
 /// the program was compiled) or "SugaR <Version>", depending on whether
 /// Version is empty.
 
-const std::string engine_info(bool to_uci) {
+const string engine_info(bool to_uci) {
 
-  stringstream ss;
+  const string months("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec");
+  string month, day, year;
+  stringstream ss, date(__DATE__); // From compiler, format is "Sep 21 2008"
 
-  const std::string months("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec");
-  std::string month, day, year;
-  std::stringstream date(__DATE__); // From compiler, format is "Sep 21 2008"
-
-  ss << "SugaR XPrO 1.4" << Version << setfill('0');
-
+  ss << "S_XPrO " << Version << setfill('0');
 
   if (Version.empty())
   {
@@ -135,12 +132,11 @@ const std::string engine_info(bool to_uci) {
       ss << setw(2) << day << setw(2) << (1 + months.find(month) / 4) << year.substr(2);
   }
 
-
   ss << (Is64Bit ? " 64" : " 32")
      << (HasPext ? " BMI2" : (HasPopCnt ? " POPCNT" : ""))
      << (to_uci  ? "\nid author ": " by ")
      << "Marco Zerbinati, Sergey Aleksandrovitch Kozlov";
- 
+
 	 return ss.str();
 }
 
@@ -513,14 +509,6 @@ int get_group(size_t idx) {
 /// bindThisThread() set the group affinity of the current thread
 
 void bindThisThread(size_t idx) {
-
-  // If OS already scheduled us on a different group than 0 then don't overwrite
-  // the choice, eventually we are one of many one-threaded processes running on
-  // some Windows NUMA hardware, for instance in fishtest. To make it simple,
-  // just check if running threads are below a threshold, in this case all this
-  // NUMA machinery is not needed.
-  if (Threads.size() < 8)
-      return;
 
   // Use only local variables to be thread-safe
   int group = get_group(idx);
