@@ -29,6 +29,8 @@
 #include "material.h"
 #include "pawns.h"
 
+#include "uci.h"
+
 std::atomic<Score> Eval::Contempt;
 
 namespace Trace {
@@ -862,14 +864,18 @@ namespace {
             + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
-    score += mobility[WHITE] - mobility[BLACK];
-
-    score +=  king<   WHITE>() - king<   BLACK>()
-            + threats<WHITE>() - threats<BLACK>()
-            + passed< WHITE>() - passed< BLACK>()
-            + space<  WHITE>() - space<  BLACK>();
-
-    score += initiative(eg_value(score));
+	if(Options["Junior Mobility"])
+		score += mobility[WHITE] - mobility[BLACK];
+	if (Options["Junior King"])
+		score += king<   WHITE>() - king<   BLACK>();
+	if (Options["Junior Threats"])
+		score += threats<WHITE>() - threats<BLACK>();
+	if (Options["Junior Passed"])
+		score += passed< WHITE>() - passed< BLACK>();
+	if (Options["Junior Space"])
+		score += space<  WHITE>() - space<  BLACK>();
+	if (Options["Junior Initiative"])
+		score += initiative(eg_value(score));
 
     // Interpolate between a middlegame and a (scaled by 'sf') endgame score
     ScaleFactor sf = scale_factor(eg_value(score));
