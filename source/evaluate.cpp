@@ -31,6 +31,14 @@
 
 #include "uci.h"
 
+extern int Options_Junior_Depth;
+extern bool Options_Junior_Mobility;
+extern bool Options_Junior_King;
+extern bool Options_Junior_Threats;
+extern bool Options_Junior_Passed;
+extern bool Options_Junior_Space;
+extern bool Options_Junior_Initiative;
+
 std::atomic<Score> Eval::Contempt;
 
 namespace Trace {
@@ -864,17 +872,17 @@ namespace {
             + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
-	if(Options["Junior Mobility"])
+	if (Options_Junior_Mobility)
 		score += mobility[WHITE] - mobility[BLACK];
-	if (Options["Junior King"])
+	if (Options_Junior_King)
 		score += king<   WHITE>() - king<   BLACK>();
-	if (Options["Junior Threats"])
+	if (Options_Junior_Threats)
 		score += threats<WHITE>() - threats<BLACK>();
-	if (Options["Junior Passed"])
+	if (Options_Junior_Passed)
 		score += passed< WHITE>() - passed< BLACK>();
-	if (Options["Junior Space"])
+	if (Options_Junior_Space)
 		score += space<  WHITE>() - space<  BLACK>();
-	if (Options["Junior Initiative"])
+	if (Options_Junior_Initiative)
 		score += initiative(eg_value(score));
 
     // Interpolate between a middlegame and a (scaled by 'sf') endgame score
