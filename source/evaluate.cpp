@@ -38,6 +38,7 @@ extern bool Options_Junior_Threats;
 extern bool Options_Junior_Passed;
 extern bool Options_Junior_Space;
 extern bool Options_Junior_Initiative;
+extern bool Options_Junior;
 
 std::atomic<Score> Eval::Contempt;
 
@@ -872,18 +873,64 @@ namespace {
             + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
+	Value v_Junior_test = pos.side_to_move() == WHITE ? v : -v;
+	
+	constexpr double JUNIOR_WINNING_PAWNS_COUNT = 1.0;
+	constexpr Value JUNIOR_WINNING_VALUE = Value(int(JUNIOR_WINNING_PAWNS_COUNT*double(PawnValueMg + PawnValueEg)/2.0));
+	constexpr double Junior_Scale_Factor_Default = 1.0;
+	constexpr double Junior_Scale_Factor_Bonus = 0.04;
+
+	double mobility_Junior_scale = Junior_Scale_Factor_Default;
+	double king_Junior_scale = Junior_Scale_Factor_Default;
+	double threats_Junior_scale = Junior_Scale_Factor_Default;
+	double passed_Junior_scale = Junior_Scale_Factor_Default;
+	double space_Junior_scale = Junior_Scale_Factor_Default;
+	double initiative_Junior_scale = Junior_Scale_Factor_Default;
+
+	if (Options_Junior)
+	{
+		if (v_Junior_test >= JUNIOR_WINNING_VALUE)
+		{
+			mobility_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
+			king_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
+			threats_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
+			passed_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
+			space_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
+			initiative_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
+		}
+		else
+			if (v_Junior_test <= -JUNIOR_WINNING_VALUE)
+			{
+				mobility_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
+				king_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
+				threats_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
+				passed_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
+				space_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
+				initiative_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
+			}
+			else  // JUNIOR_EQUAL
+			{
+				//mobility_Junior_scal = Junior_Scale_Factor_Default;
+				//king_Junior_scale = Junior_Scale_Factor_Default;
+				//threats_Junior_scale = Junior_Scale_Factor_Default;
+				//passed_Junior_scale = Junior_Scale_Factor_Default;
+				//space_Junior_scale = Junior_Scale_Factor_Default;
+				//initiative_Junior_scale = Junior_Scale_Factor_Default;
+			}
+	}
+
 	if (Options_Junior_Mobility)
-		score += mobility[WHITE] - mobility[BLACK];
+		score += Score(int(double(mobility[WHITE] - mobility[BLACK])*mobility_Junior_scale));
 	if (Options_Junior_King)
-		score += king<   WHITE>() - king<   BLACK>();
+		score += Score(int(double(king<   WHITE>() - king<   BLACK>())*king_Junior_scale));
 	if (Options_Junior_Threats)
-		score += threats<WHITE>() - threats<BLACK>();
+		score += Score(int(double(threats<WHITE>() - threats<BLACK>())*threats_Junior_scale));
 	if (Options_Junior_Passed)
-		score += passed< WHITE>() - passed< BLACK>();
+		score += Score(int(double(passed< WHITE>() - passed< BLACK>())*passed_Junior_scale));
 	if (Options_Junior_Space)
-		score += space<  WHITE>() - space<  BLACK>();
+		score += Score(int(double(space<  WHITE>() - space<  BLACK>())*space_Junior_scale));
 	if (Options_Junior_Initiative)
-		score += initiative(eg_value(score));
+		score += Score(int(double(initiative(eg_value(score)))*initiative_Junior_scale));
 
     // Interpolate between a middlegame and a (scaled by 'sf') endgame score
     ScaleFactor sf = scale_factor(eg_value(score));
