@@ -878,7 +878,8 @@ namespace {
 	constexpr double JUNIOR_WINNING_PAWNS_COUNT = 2.0;
 	const Value JUNIOR_WINNING_VALUE = Value(int(JUNIOR_WINNING_PAWNS_COUNT*double(PawnValueMg + PawnValueEg)/2.0));
 	constexpr double Junior_Scale_Factor_Default = 1.0;
-	constexpr double Junior_Scale_Factor_Bonus_Default = 0.1;
+	constexpr double Junior_Winning_Scale_Factor_Default = 0.1;
+	constexpr double Junior_Scale_Factor_Bonus_Default = 2.0 / double(MidgameLimit + EndgameLimit) * Junior_Winning_Scale_Factor_Default;
 	const double Junior_Scale_Factor_Bonus = (double(v_Junior_test) / double(JUNIOR_WINNING_VALUE) - 1.0) * Junior_Scale_Factor_Bonus_Default;
 
 	double mobility_Junior_scale = Junior_Scale_Factor_Default;
