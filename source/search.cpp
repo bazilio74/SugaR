@@ -48,6 +48,8 @@ bool Options_Junior_Passed;
 bool Options_Junior_Space;
 bool Options_Junior_Initiative;
 
+bool Options_Junior;
+
 namespace Search {
 
   LimitsType Limits;
@@ -236,6 +238,8 @@ void MainThread::search() {
   Options_Junior_Passed = Options["Junior Passed"];
   Options_Junior_Space = Options["Junior Space"];
   Options_Junior_Initiative = Options["Junior Initiative"];
+
+  Options_Junior = Options["Junior"];
  
   if (rootMoves.empty())
   {
