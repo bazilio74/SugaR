@@ -38,7 +38,7 @@ extern bool Options_Junior_Threats;
 extern bool Options_Junior_Passed;
 extern bool Options_Junior_Space;
 extern bool Options_Junior_Initiative;
-extern bool Options_Junior;
+extern bool Options_Junior_Strategy;
 
 std::atomic<Score> Eval::Contempt;
 
@@ -887,7 +887,7 @@ namespace {
 	double space_Junior_scale = Junior_Scale_Factor_Default;
 	double initiative_Junior_scale = Junior_Scale_Factor_Default;
 
-	if (Options_Junior)
+	if (Options_Junior_Strategy)
 	{
 		if (v_Junior_test >= JUNIOR_WINNING_VALUE)
 		{
