@@ -873,12 +873,14 @@ namespace {
             + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
-	Value v_Junior_test = pos.side_to_move() == WHITE ? v : -v;
+	Value v_Junior_test = v;
 	
-	constexpr double JUNIOR_WINNING_PAWNS_COUNT = 1.0;
-	constexpr Value JUNIOR_WINNING_VALUE = Value(int(JUNIOR_WINNING_PAWNS_COUNT*double(PawnValueMg + PawnValueEg)/2.0));
+	constexpr double JUNIOR_WINNING_PAWNS_COUNT = 2.0;
+	const Value JUNIOR_WINNING_VALUE = Value(int(JUNIOR_WINNING_PAWNS_COUNT*double(PawnValueMg + PawnValueEg)/2.0));
 	constexpr double Junior_Scale_Factor_Default = 1.0;
-	constexpr double Junior_Scale_Factor_Bonus = 0.04;
+	constexpr double Junior_Winning_Scale_Factor_Default = 0.1;
+	constexpr double Junior_Scale_Factor_Bonus_Default = 2.0 / double(MidgameLimit + EndgameLimit) * Junior_Winning_Scale_Factor_Default;
+	const double Junior_Scale_Factor_Bonus = (double(v_Junior_test) / double(JUNIOR_WINNING_VALUE) - 1.0) * Junior_Scale_Factor_Bonus_Default;
 
 	double mobility_Junior_scale = Junior_Scale_Factor_Default;
 	double king_Junior_scale = Junior_Scale_Factor_Default;
@@ -889,48 +891,50 @@ namespace {
 
 	if (Options_Junior_Strategy)
 	{
-		if (v_Junior_test >= JUNIOR_WINNING_VALUE)
-		{
-			mobility_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
-			king_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
-			threats_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
-			passed_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
-			space_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
-			initiative_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
-		}
-		else
-			if (v_Junior_test <= -JUNIOR_WINNING_VALUE)
-			{
-				mobility_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
-				king_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
-				threats_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
-				passed_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
-				space_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
-				initiative_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
-			}
-			else  // JUNIOR_EQUAL
-			{
-				//mobility_Junior_scal = Junior_Scale_Factor_Default;
-				//king_Junior_scale = Junior_Scale_Factor_Default;
-				//threats_Junior_scale = Junior_Scale_Factor_Default;
-				//passed_Junior_scale = Junior_Scale_Factor_Default;
-				//space_Junior_scale = Junior_Scale_Factor_Default;
-				//initiative_Junior_scale = Junior_Scale_Factor_Default;
-			}
+		mobility_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
+		king_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
+		threats_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
+		passed_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
+		space_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus;
+		initiative_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus;
 	}
 
 	if (Options_Junior_Mobility)
-		score += Score(int(double(mobility[WHITE] - mobility[BLACK])*mobility_Junior_scale));
+	{
+		Score default_mobility = mobility[WHITE] - mobility[BLACK];
+		Score score_mobility = Score(int(double(default_mobility)*mobility_Junior_scale));
+		score += score_mobility;
+	}
 	if (Options_Junior_King)
-		score += Score(int(double(king<   WHITE>() - king<   BLACK>())*king_Junior_scale));
+	{
+		Score default_king = king<   WHITE>() - king<   BLACK>();
+		Score score_king = Score(int(double(default_king)*king_Junior_scale));
+		score += score_king;
+	}
 	if (Options_Junior_Threats)
-		score += Score(int(double(threats<WHITE>() - threats<BLACK>())*threats_Junior_scale));
+	{
+		Score default_threades = threats<WHITE>() - threats<BLACK>();
+		Score score_threats = Score(int(double(default_threades)*threats_Junior_scale));
+		score += score_threats;
+	}
 	if (Options_Junior_Passed)
-		score += Score(int(double(passed< WHITE>() - passed< BLACK>())*passed_Junior_scale));
+	{
+		Score default_passed = passed< WHITE>() - passed< BLACK>();
+		Score score_passed = Score(int(double(default_passed)*passed_Junior_scale));
+		score += score_passed;
+	}
 	if (Options_Junior_Space)
-		score += Score(int(double(space<  WHITE>() - space<  BLACK>())*space_Junior_scale));
+	{
+		Score default_space = space<  WHITE>() - space<  BLACK>();
+		Score score_space = Score(int(double(default_space)*space_Junior_scale));
+		score += score_space;
+	}
 	if (Options_Junior_Initiative)
-		score += Score(int(double(initiative(eg_value(score)))*initiative_Junior_scale));
+	{
+		Score default_initiative = initiative(eg_value(score));
+		Score score_initiative = Score(int(double(default_initiative)*initiative_Junior_scale));
+		score += score_initiative;
+	}
 
     // Interpolate between a middlegame and a (scaled by 'sf') endgame score
     ScaleFactor sf = scale_factor(eg_value(score));
