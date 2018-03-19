@@ -71,7 +71,7 @@ bool CaseInsensitiveLess::operator() (const string& s1, const string& s2) const 
 void init(OptionsMap& o) {
 
   // at most 2^32 clusters.
-  const int MaxHashMB = Is64Bit ? 131072 : 2048;
+  constexpr int MaxHashMB = Is64Bit ? 131072 : 2048;
 
   unsigned int n = std::thread::hardware_concurrency();
   if (!n) n = 1;
