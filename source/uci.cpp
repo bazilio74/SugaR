@@ -305,7 +305,7 @@ string UCI::move(Move m, bool chess960) {
 
 Move UCI::to_move(const Position& pos, string& str) {
 
-  if (str.length() == 5) // Junior could send promotion piece in uppercase
+  if (str.length() == 5) // Shashin could send promotion piece in uppercase
       str[4] = char(tolower(str[4]));
 
   for (const auto& m : MoveList<LEGAL>(pos))
