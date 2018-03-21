@@ -31,7 +31,7 @@
 
 #include "uci.h"
 
-extern int Options_Shashin_Depth;
+extern int Options_Junior_Depth;
 extern bool Options_Shashin_Mobility;
 extern bool Options_Shashin_King;
 extern bool Options_Shashin_Threats;

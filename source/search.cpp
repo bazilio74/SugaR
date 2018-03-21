@@ -40,7 +40,7 @@
 #include "uci.h"
 #include "syzygy/tbprobe.h"
 
-int Options_Shashin_Depth;
+int Options_Junior_Depth;
 bool Options_Shashin_Mobility;
 bool Options_Shashin_King;
 bool Options_Shashin_Threats;
@@ -231,7 +231,7 @@ void MainThread::search() {
   doNull   = Options["NullMove"];
   tactical =  Options["Analysis Mode"];
 
-  Options_Shashin_Depth = Options["Shashin Depth"];
+  Options_Junior_Depth = Options["Junior Depth"];
   Options_Shashin_Mobility = Options["Shashin Mobility"];
   Options_Shashin_King = Options["Shashin King"];
   Options_Shashin_Threats = Options["Shashin Threats"];
@@ -390,7 +390,7 @@ void Thread::search() {
 
   // Iterative deepening loop until requested to stop or the target depth is reached
   while (   (rootDepth += ONE_PLY) < DEPTH_MAX
-	     && rootDepth <= Options_Shashin_Depth
+	     && rootDepth <= Options_Junior_Depth
          && !Threads.stop
          && !(Limits.depth && mainThread && rootDepth / ONE_PLY > Limits.depth))
   {
