@@ -878,8 +878,8 @@ namespace {
 	constexpr int SHASHIN_WINNING_PAWNS_COUNT = 2;
 	constexpr Value SHASHIN_WINNING_VALUE = Value(SHASHIN_WINNING_PAWNS_COUNT * (PawnValueMg + PawnValueEg) / 2);
 	constexpr int Shashin_Scale_Factor_Default = int(10e6);
-	constexpr int Shashin_Winning_Scale_Factor_Default = int(10e5);
-	const int Shashin_Scale_Factor_Bonus = Shashin_Winning_Scale_Factor_Default * (v_Shashin_test) / (SHASHIN_WINNING_VALUE) * 2 / (MidgameLimit + EndgameLimit);
+	constexpr int Shashin_Winning_Scale_Factor_Default = int(10e5)/2;
+	const int Shashin_Scale_Factor_Bonus = Shashin_Winning_Scale_Factor_Default * (v_Shashin_test - SHASHIN_WINNING_VALUE) / (SHASHIN_WINNING_VALUE) * 2 / (MidgameLimit + EndgameLimit);
 
 	int mobility_Shashin_scale = Shashin_Scale_Factor_Default;
 	int king_Shashin_scale = Shashin_Scale_Factor_Default;
