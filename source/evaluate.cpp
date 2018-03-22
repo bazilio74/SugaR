@@ -883,7 +883,7 @@ namespace {
 
 	double mobility_Shashin_scale = Shashin_Scale_Factor_Default;
 	double king_Shashin_scale = Shashin_Scale_Factor_Default;
-	double threades_Shashin_scale = Shashin_Scale_Factor_Default;
+	double threats_Shashin_scale = Shashin_Scale_Factor_Default;
 	double passed_Shashin_scale = Shashin_Scale_Factor_Default;
 	double space_Shashin_scale = Shashin_Scale_Factor_Default;
 	double initiative_Shashin_scale = Shashin_Scale_Factor_Default;
@@ -892,7 +892,7 @@ namespace {
 	{
 		mobility_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus;
 		king_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus;
-		threades_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus;
+		threats_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus;
 		passed_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus;
 		space_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus;
 		initiative_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus;
@@ -912,8 +912,8 @@ namespace {
 	}
 	if (Options_Junior_Threats)
 	{
-		Score default_threades = threats<WHITE>() - threats<BLACK>();
-		Score score_threats = Score(int(double(default_threades) * threades_Shashin_scale));
+		Score default_threats = threats<WHITE>() - threats<BLACK>();
+		Score score_threats = Score(int(double(default_threats) * threats_Shashin_scale));
 		score += score_threats;
 	}
 	if (Options_Junior_Passed)
