@@ -875,19 +875,18 @@ namespace {
 
 	Value v_Shashin_test = v;
 	
-	constexpr double SHASHIN_WINNING_PAWNS_COUNT = 2.0;
-	const Value SHASHIN_WINNING_VALUE = Value(int(SHASHIN_WINNING_PAWNS_COUNT*double(PawnValueMg + PawnValueEg)/2.0));
-	constexpr double Shashin_Scale_Factor_Default = 1.0;
-	constexpr double Shashin_Winning_Scale_Factor_Default = 0.1;
-	constexpr double Shashin_Scale_Factor_Bonus_Default = 2.0 / double(MidgameLimit + EndgameLimit) * Shashin_Winning_Scale_Factor_Default;
-	const double Shashin_Scale_Factor_Bonus = (double(v_Shashin_test) / double(SHASHIN_WINNING_VALUE)) * Shashin_Scale_Factor_Bonus_Default;
+	constexpr int SHASHIN_WINNING_PAWNS_COUNT = 2;
+	constexpr Value SHASHIN_WINNING_VALUE = Value(SHASHIN_WINNING_PAWNS_COUNT * (PawnValueMg + PawnValueEg) / 2);
+	constexpr int Shashin_Scale_Factor_Default = int(10e6);
+	constexpr int Shashin_Winning_Scale_Factor_Default = int(10e5);
+	const int Shashin_Scale_Factor_Bonus = Shashin_Winning_Scale_Factor_Default * (v_Shashin_test) / (SHASHIN_WINNING_VALUE) * 2 / (MidgameLimit + EndgameLimit);
 
-	double mobility_Shashin_scale = Shashin_Scale_Factor_Default;
-	double king_Shashin_scale = Shashin_Scale_Factor_Default;
-	double threats_Shashin_scale = Shashin_Scale_Factor_Default;
-	double passed_Shashin_scale = Shashin_Scale_Factor_Default;
-	double space_Shashin_scale = Shashin_Scale_Factor_Default;
-	double initiative_Shashin_scale = Shashin_Scale_Factor_Default;
+	int mobility_Shashin_scale = Shashin_Scale_Factor_Default;
+	int king_Shashin_scale = Shashin_Scale_Factor_Default;
+	int threats_Shashin_scale = Shashin_Scale_Factor_Default;
+	int passed_Shashin_scale = Shashin_Scale_Factor_Default;
+	int space_Shashin_scale = Shashin_Scale_Factor_Default;
+	int initiative_Shashin_scale = Shashin_Scale_Factor_Default;
 
 	if (Options_Shashin_Strategy)
 	{
@@ -902,37 +901,37 @@ namespace {
 	if (Options_Junior_Mobility)
 	{
 		Score default_mobility = mobility[WHITE] - mobility[BLACK];
-		Score score_mobility = Score(int(double(default_mobility)*mobility_Shashin_scale));
+		Score score_mobility = Score(int(default_mobility) * mobility_Shashin_scale / Shashin_Scale_Factor_Default);
 		score += score_mobility;
 	}
 	if (Options_Junior_King)
 	{
 		Score default_king = king<   WHITE>() - king<   BLACK>();
-		Score score_king = Score(int(double(default_king)*king_Shashin_scale));
+		Score score_king = Score(int(default_king) * king_Shashin_scale / Shashin_Scale_Factor_Default);
 		score += score_king;
 	}
 	if (Options_Junior_Threats)
 	{
 		Score default_threades = threats<WHITE>() - threats<BLACK>();
-		Score score_threats = Score(int(double(default_threades)*threats_Shashin_scale));
+		Score score_threats = Score(int(default_threades) * threats_Shashin_scale / Shashin_Scale_Factor_Default);
 		score += score_threats;
 	}
 	if (Options_Junior_Passed)
 	{
 		Score default_passed = passed< WHITE>() - passed< BLACK>();
-		Score score_passed = Score(int(double(default_passed)*passed_Shashin_scale));
+		Score score_passed = Score(int(default_passed) * passed_Shashin_scale / Shashin_Scale_Factor_Default);
 		score += score_passed;
 	}
 	if (Options_Junior_Space)
 	{
 		Score default_space = space<  WHITE>() - space<  BLACK>();
-		Score score_space = Score(int(double(default_space)*space_Shashin_scale));
+		Score score_space = Score(int(default_space) * space_Shashin_scale / Shashin_Scale_Factor_Default);
 		score += score_space;
 	}
 	if (Options_Junior_Initiative)
 	{
 		Score default_initiative = initiative(eg_value(score));
-		Score score_initiative = Score(int(double(default_initiative)*initiative_Shashin_scale));
+		Score score_initiative = Score(int(default_initiative) * initiative_Shashin_scale / Shashin_Scale_Factor_Default);
 		score += score_initiative;
 	}
 
