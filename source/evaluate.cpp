@@ -880,7 +880,7 @@ namespace {
 	constexpr double Shashin_Scale_Factor_Default = 1.0;
 	constexpr double Shashin_Winning_Scale_Factor_Default = 0.1;
 	constexpr double Shashin_Scale_Factor_Bonus_Default = 2.0 / double(MidgameLimit + EndgameLimit) * Shashin_Winning_Scale_Factor_Default;
-	const double Shashin_Scale_Factor_Bonus = (double(v_Shashin_test) / double(SHASHIN_WINNING_VALUE) - 1.0) * Shashin_Scale_Factor_Bonus_Default;
+	const double Shashin_Scale_Factor_Bonus = (double(v_Shashin_test) / double(SHASHIN_WINNING_VALUE)) * Shashin_Scale_Factor_Bonus_Default;
 
 	double mobility_Shashin_scale = Shashin_Scale_Factor_Default;
 	double king_Shashin_scale = Shashin_Scale_Factor_Default;
