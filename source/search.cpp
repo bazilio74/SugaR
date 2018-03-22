@@ -43,7 +43,7 @@
 int Options_Junior_Depth;
 bool Options_Junior_Mobility;
 bool Options_Junior_King;
-bool Options_Shashin_Threats;
+bool Options_Junior_Threats;
 bool Options_Junior_Passed;
 bool Options_Junior_Space;
 bool Options_Junior_Initiative;
@@ -232,12 +232,12 @@ void MainThread::search() {
   tactical =  Options["Analysis Mode"];
 
   Options_Junior_Depth = Options["Junior Depth"];
-  Options_Shashin_Mobility = Options["Shashin Mobility"];
-  Options_Shashin_King = Options["Shashin King"];
-  Options_Shashin_Threats = Options["Shashin Threats"];
-  Options_Shashin_Passed = Options["Shashin Passed"];
-  Options_Shashin_Space = Options["Shashin Space"];
-  Options_Shashin_Initiative = Options["Shashin Initiative"];
+  Options_Junior_Mobility = Options["Shashin Mobility"];
+  Options_Junior_King = Options["Shashin King"];
+  Options_Junior_Threats = Options["Shashin Threats"];
+  Options_Junior_Passed = Options["Shashin Passed"];
+  Options_Junior_Space = Options["Shashin Space"];
+  Options_Junior_Initiative = Options["Shashin Initiative"];
 
   Options_Shashin_Strategy = Options["Shashin Strategy"];
  
