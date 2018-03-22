@@ -41,12 +41,12 @@
 #include "syzygy/tbprobe.h"
 
 int Options_Junior_Depth;
-bool Options_Shashin_Mobility;
-bool Options_Shashin_King;
+bool Options_Junior_Mobility;
+bool Options_Junior_King;
 bool Options_Shashin_Threats;
-bool Options_Shashin_Passed;
-bool Options_Shashin_Space;
-bool Options_Shashin_Initiative;
+bool Options_Junior_Passed;
+bool Options_Junior_Space;
+bool Options_Junior_Initiative;
 
 bool Options_Shashin_Strategy;
 
