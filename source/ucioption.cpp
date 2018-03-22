@@ -91,12 +91,12 @@ void init(OptionsMap& o) {
   o["Slow Mover"]            << Option(84, 10, 1000);
   o["nodestime"]             << Option(0, 0, 10000);
   o["Junior Depth"]					<< Option(MAX_PLY-1, 1, MAX_PLY-1);
-  o["Shashin Mobility"]				<< Option(true);
-  o["Shashin King"]					<< Option(true);
-  o["Shashin Threats"]				<< Option(true);
-  o["Shashin Passed"]				<< Option(true);
-  o["Shashin Space"]				<< Option(true);
-  o["Shashin Initiative"]			<< Option(true);
+  o["Junior Mobility"]				<< Option(true);
+  o["Junior King"]					<< Option(true);
+  o["Junior Threats"]				<< Option(true);
+  o["Junior Passed"]				<< Option(true);
+  o["Junior Space"]				<< Option(true);
+  o["Junior Initiative"]			<< Option(true);
   o["Shashin Strategy"]				<< Option(true);
   o["NeverClearHash"]           << Option(false);
   o["HashFile"]                 << Option("SugaR_hash.hsh", on_HashFile);

@@ -32,12 +32,12 @@
 #include "uci.h"
 
 extern int Options_Junior_Depth;
-extern bool Options_Shashin_Mobility;
-extern bool Options_Shashin_King;
-extern bool Options_Shashin_Threats;
-extern bool Options_Shashin_Passed;
-extern bool Options_Shashin_Space;
-extern bool Options_Shashin_Initiative;
+extern bool Options_Junior_Mobility;
+extern bool Options_Junior_King;
+extern bool Options_Junior_Threats;
+extern bool Options_Junior_Passed;
+extern bool Options_Junior_Space;
+extern bool Options_Junior_Initiative;
 extern bool Options_Shashin_Strategy;
 
 std::atomic<Score> Eval::Contempt;
