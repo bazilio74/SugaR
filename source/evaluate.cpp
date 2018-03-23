@@ -891,8 +891,8 @@ namespace {
 	if (Options_Shashin_Strategy)
 	{
 		mobility_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus;
-		king_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus;
-		threats_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus;
+		king_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus;
+		threats_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus;
 		passed_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus;
 		space_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus;
 		initiative_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus;
