@@ -875,7 +875,7 @@ namespace {
 
 	Value v_Shashin_test = v;
 	
-	constexpr double SHASHIN_WINNING_PAWNS_COUNT = 1.0;
+	constexpr double SHASHIN_WINNING_PAWNS_COUNT = 2.0;
 	constexpr Value SHASHIN_WINNING_VALUE = Value(int(SHASHIN_WINNING_PAWNS_COUNT * double(PawnValueMg + PawnValueEg) / 2.0));
 	constexpr double Shashin_Scale_Factor_Default = 1.0;
 	constexpr double Shashin_Winning_Scale_Factor_Default = 0.1;
