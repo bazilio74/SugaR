@@ -875,8 +875,8 @@ namespace {
 
 	Value v_Shashin_test = v;
 	
-	constexpr double SHASHIN_WINNING_PAWNS_COUNT = 2.0;
-	constexpr Value SHASHIN_WINNING_VALUE = Value(int(SHASHIN_WINNING_PAWNS_COUNT * double(PawnValueMg + PawnValueEg) / 2.0));
+	constexpr double SHASHIN_ADVANTAGE_PAWNS_COUNT = 1.0;
+	constexpr Value SHASHIN_ADVANTAGE_VALUE = Value(int(SHASHIN_ADVANTAGE_PAWNS_COUNT * double(PawnValueMg + PawnValueEg) / 2.0));
 	constexpr double Shashin_Scale_Factor_Default = 1.0;
 
 	double king_Shashin_scale = Shashin_Scale_Factor_Default;
@@ -890,7 +890,7 @@ namespace {
 			constexpr double Alpha = 0.5;
 			const double Beta = abs(Shashin_Winning_Scale_Factor_Default * 2 / (MidgameLimit + EndgameLimit));
 
-			const double Shashin_Scale_Factor_Bonus = (-abs(v_Shashin_test / SHASHIN_WINNING_VALUE) + Alpha);
+			const double Shashin_Scale_Factor_Bonus = (-abs(v_Shashin_test / SHASHIN_ADVANTAGE_VALUE) + Alpha);
 
 			passed_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus * Beta;
 			king_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus * Beta;
