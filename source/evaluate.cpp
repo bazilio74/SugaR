@@ -878,31 +878,28 @@ namespace {
 	constexpr double SHASHIN_WINNING_PAWNS_COUNT = 2.0;
 	constexpr Value SHASHIN_WINNING_VALUE = Value(int(SHASHIN_WINNING_PAWNS_COUNT * double(PawnValueMg + PawnValueEg) / 2.0));
 	constexpr double Shashin_Scale_Factor_Default = 1.0;
-	constexpr double Shashin_Winning_Scale_Factor_Default = 0.1;
-	const double Shashin_Scale_Factor_Bonus = Shashin_Winning_Scale_Factor_Default * double(v_Shashin_test - SHASHIN_WINNING_VALUE) / double(SHASHIN_WINNING_VALUE) * 2 / (MidgameLimit + EndgameLimit);
 
-	double mobility_Shashin_scale = Shashin_Scale_Factor_Default;
 	double king_Shashin_scale = Shashin_Scale_Factor_Default;
-	double threats_Shashin_scale = Shashin_Scale_Factor_Default;
 	double passed_Shashin_scale = Shashin_Scale_Factor_Default;
-	double space_Shashin_scale = Shashin_Scale_Factor_Default;
-	double initiative_Shashin_scale = Shashin_Scale_Factor_Default;
 
 	if (Options_Shashin_Strategy)
 	{
-		mobility_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus;
-		king_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus;
-		threats_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus;
-		passed_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus;
-		space_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus;
-		initiative_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus;
+		{
+			constexpr double Shashin_Winning_Scale_Factor_Default = 0.1;
+
+			constexpr double Alpha = 0.5;
+			const double Beta = abs(Shashin_Winning_Scale_Factor_Default * 2 / (MidgameLimit + EndgameLimit));
+
+			const double Shashin_Scale_Factor_Bonus = (-abs(v_Shashin_test / SHASHIN_WINNING_VALUE) + Alpha);
+
+			passed_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus * Beta;
+			king_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus * Beta;
+		}
 	}
 
 	if (Options_Junior_Mobility)
 	{
-		Score default_mobility = mobility[WHITE] - mobility[BLACK];
-		Score score_mobility = Score(int(double(default_mobility) * mobility_Shashin_scale));
-		score += score_mobility;
+		score += mobility[WHITE] - mobility[BLACK];
 	}
 	if (Options_Junior_King)
 	{
@@ -912,9 +909,7 @@ namespace {
 	}
 	if (Options_Junior_Threats)
 	{
-		Score default_threats = threats<WHITE>() - threats<BLACK>();
-		Score score_threats = Score(int(double(default_threats) * threats_Shashin_scale));
-		score += score_threats;
+		score += threats<WHITE>() - threats<BLACK>();
 	}
 	if (Options_Junior_Passed)
 	{
@@ -924,15 +919,11 @@ namespace {
 	}
 	if (Options_Junior_Space)
 	{
-		Score default_space = space<  WHITE>() - space<  BLACK>();
-		Score score_space = Score(int(double(default_space) * space_Shashin_scale));
-		score += score_space;
+		score += space<  WHITE>() - space<  BLACK>();
 	}
 	if (Options_Junior_Initiative)
 	{
-		Score default_initiative = initiative(eg_value(score));
-		Score score_initiative = Score(int(double(default_initiative) * initiative_Shashin_scale));
-		score += score_initiative;
+		score += initiative(eg_value(score));
 	}
 
     // Interpolate between a middlegame and a (scaled by 'sf') endgame score
