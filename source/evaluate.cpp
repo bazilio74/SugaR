@@ -38,6 +38,7 @@ extern bool Options_Junior_Threats;
 extern bool Options_Junior_Passed;
 extern bool Options_Junior_Space;
 extern bool Options_Junior_Initiative;
+extern bool Options_Shashin_Strategy;
 
 std::atomic<Score> Eval::Contempt;
 
@@ -872,18 +873,58 @@ namespace {
             + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
+	Value v_Shashin_test = v;
+	
+	constexpr double SHASHIN_ADVANTAGE_PAWNS_COUNT = 1.0;
+	constexpr Value SHASHIN_ADVANTAGE_VALUE = Value(int(SHASHIN_ADVANTAGE_PAWNS_COUNT * double(PawnValueMg + PawnValueEg) / 2.0));
+	constexpr double Shashin_Scale_Factor_Default = 1.0;
+
+	double king_Shashin_scale = Shashin_Scale_Factor_Default;
+	double passed_Shashin_scale = Shashin_Scale_Factor_Default;
+
+	if (Options_Shashin_Strategy)
+	{
+		{
+			constexpr double Shashin_Winning_Scale_Factor_Default = 0.1;
+
+			constexpr double Alpha = 0.5;
+			const double Beta = abs(Shashin_Winning_Scale_Factor_Default * 2 / (MidgameLimit + EndgameLimit));
+
+			const double Shashin_Scale_Factor_Bonus = (-abs(v_Shashin_test / SHASHIN_ADVANTAGE_VALUE) + Alpha);
+
+			passed_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus * Beta;
+			king_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus * Beta;
+		}
+	}
+
 	if (Options_Junior_Mobility)
+	{
 		score += mobility[WHITE] - mobility[BLACK];
+	}
 	if (Options_Junior_King)
-		score += king<   WHITE>() - king<   BLACK>();
+	{
+		Score default_king = king<   WHITE>() - king<   BLACK>();
+		Score score_king = Score(int(double(default_king) * king_Shashin_scale));
+		score += score_king;
+	}
 	if (Options_Junior_Threats)
+	{
 		score += threats<WHITE>() - threats<BLACK>();
+	}
 	if (Options_Junior_Passed)
-		score += passed< WHITE>() - passed< BLACK>();
+	{
+		Score default_passed = passed< WHITE>() - passed< BLACK>();
+		Score score_passed = Score(int(double(default_passed) * passed_Shashin_scale));
+		score += score_passed;
+	}
 	if (Options_Junior_Space)
+	{
 		score += space<  WHITE>() - space<  BLACK>();
+	}
 	if (Options_Junior_Initiative)
+	{
 		score += initiative(eg_value(score));
+	}
 
     // Interpolate between a middlegame and a (scaled by 'sf') endgame score
     ScaleFactor sf = scale_factor(eg_value(score));
