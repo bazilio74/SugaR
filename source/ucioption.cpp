@@ -34,6 +34,8 @@
 #include "syzygy/tbprobe.h"
 #include "polybook.h"
 
+#include "MachineLeaningControl.h"
+
 using std::string;
 
 UCI::OptionsMap Options; // Global object
@@ -49,6 +51,7 @@ void on_threads(const Option& o) { Threads.set(o); }
 void on_tb_path(const Option& o) { Tablebases::init(o); }
 //Hash	
 void on_HashFile(const Option& o) { TT.set_hash_file_name(o); }
+void on_MachineLearningFile(const Option& o) { MachineLearningControlMain.SetFileName(o); }
 void SaveHashtoFile(const Option&) { TT.save(); }
 void LoadHashfromFile(const Option&) { TT.load(); }
 void LoadEpdToHash(const Option&) { TT.load_epd_to_hash(); }
@@ -90,6 +93,7 @@ void init(OptionsMap& o) {
   o["Minimum Thinking Time"] << Option(20, 0, 5000);
   o["Slow Mover"]            << Option(84, 10, 1000);
   o["nodestime"]             << Option(0, 0, 10000);
+  o["Machine Learning File"]		<< Option("SugarMachineLearning.sml", on_MachineLearningFile);
   o["Junior Depth"]					<< Option(MAX_PLY-1, 1, MAX_PLY-1);
   o["Junior Mobility"]				<< Option(true);
   o["Junior King"]					<< Option(true);

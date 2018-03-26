@@ -35,6 +35,8 @@
 #include "syzygy/tbprobe.h"
 #include "polybook.h"
 
+#include "MachineLeaningControl.h"
+
 namespace PSQT {
 	void init();
 }
@@ -87,6 +89,7 @@ int main(int argc, char* argv[]) {
   TT.resize(Options["Hash"]);
   Threads.set(Options["Threads"]);
   polybook.init(Options["BookFile"]);
+  MachineLearningControlMain.SetFileName(Options["Machine Learning File"]);
   Search::clear(); // After threads are up
 
   UCI::loop(argc, argv);
