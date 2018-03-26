@@ -20,13 +20,7 @@ MachineLearningControl::~MachineLearningControl()
 
 void MachineLearningControl::SetFileName(std::string parameter_file_name)
 {
-	SaveData();
-
-	MachineLearningDataStore.clear();
-
 	file_name = parameter_file_name;
-
-	LoadData();
 }
 
 
@@ -110,3 +104,18 @@ int MachineLearningControl::SaveData()
 	return 0;
 }
 
+void MachineLearningControl::ClearData()
+{
+	MachineLearningDataStore.clear();
+}
+
+void MachineLearningControl::StartLearning()
+{
+
+}
+
+
+void MachineLearningControl::EndLearning()
+{
+
+}

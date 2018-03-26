@@ -22,13 +22,17 @@ public:
 
 	void SetFileName(std::string parameter_file_name);
 
-protected:
 	//	0 - success
 	//	1 - fail
 	int LoadData();
 	//	0 - success
 	//	1 - fail
 	int SaveData();
+
+	void ClearData();
+
+	void StartLearning();
+	void EndLearning();
 };
 
 extern MachineLearningControl MachineLearningControlMain;

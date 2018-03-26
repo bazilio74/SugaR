@@ -33,6 +33,9 @@
 #include "uci.h"
 #include "syzygy/tbprobe.h"
 
+#include "MachineLeaningControl.h"
+void learning(Position& pos, std::istringstream& is, StateListPtr& states);
+
 using namespace std;
 
 extern vector<string> setup_bench(const Position&, istream&);
@@ -236,6 +239,11 @@ void UCI::loop(int argc, char* argv[]) {
       else if (token == "bench") bench(pos, is, states);
       else if (token == "d")     sync_cout << pos << sync_endl;
       else if (token == "eval")  sync_cout << Eval::trace(pos) << sync_endl;
+	  else if (token == "learning")
+	  {
+		  Threads.stop = true;
+		  learning(pos, is, states);
+	  }
       else
           sync_cout << "Unknown command: " << cmd << sync_endl;
 
@@ -313,4 +321,34 @@ Move UCI::to_move(const Position& pos, string& str) {
           return m;
 
   return MOVE_NONE;
+}
+
+
+void learning(Position& pos, std::istringstream& is, StateListPtr& states)
+{
+	string token;
+
+	while (is >> token)
+	{
+		if (token == "start")
+		{
+			MachineLearningControlMain.StartLearning();
+		}
+		else if (token == "end")
+		{
+			MachineLearningControlMain.EndLearning();
+		}
+		else if (token == "save")
+		{
+			MachineLearningControlMain.SaveData();
+		}
+		else if (token == "load")
+		{
+			MachineLearningControlMain.LoadData();
+		}
+		else if (token == "clear")
+		{
+			MachineLearningControlMain.ClearData();
+		}
+	}
 }
