@@ -6,16 +6,36 @@
 #include <string>
 #include <list>
 
+#include <condition_variable>
+#include <mutex>
+#include <thread>
+
 #include "MachineLearningData.h"
+
+#include "position.h"
 
 class MachineLearningControl
 {
 protected:
+
 	std::string file_name;
+	bool learning_in_progress;
+	bool learning_move_returned;
+	bool learning_exit;
+
+	std::thread learning_thread;
+
+	Position current_position;
+	Move Last_Move;
+	bool is_960;
+	StateListPtr *states;
+	bool current_position_set;
 
 	typedef std::list<MachineLearningDataAtom> MachineLearningDataList;
 	typedef std::list<MachineLearningDataAtom>::iterator MachineLearningDataListIterator;
 	MachineLearningDataList MachineLearningDataStore;
+
+	void learning_thread_function();
 public:
 	MachineLearningControl();
 	~MachineLearningControl();
@@ -31,8 +51,12 @@ public:
 
 	void ClearData();
 
-	void StartLearning();
+	void StartLearning(Position &position_parameter, std::istringstream& is, StateListPtr& parameter_states);
 	void EndLearning();
+
+	void LearningExit();
+
+	void Answer(Move parameter_Move, bool parameter_960);
 };
 
 extern MachineLearningControl MachineLearningControlMain;

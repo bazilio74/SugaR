@@ -5,6 +5,8 @@
 
 #include <fstream>
 
+constexpr size_t data_maximum_size = 500;
+
 class MachineLearningDataAtom
 {
 public:
@@ -14,11 +16,12 @@ public:
 	std::ifstream& operator>>(std::ifstream &input_stream);
 	std::ofstream& operator<<(std::ofstream &output_stream);
 
-	char GetData();
+	std::string GetData();
+	void SetData(std::string parameter_data);
 
 protected:
 
-	char TestChar;
+	char data[data_maximum_size];
 };
 
 std::ifstream& operator>>(std::ifstream &input_stream, MachineLearningDataAtom &MachineLearningDataAtom_parameter);

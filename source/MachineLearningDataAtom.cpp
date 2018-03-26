@@ -5,6 +5,7 @@
 
 MachineLearningDataAtom::MachineLearningDataAtom()
 {
+	memset(data, 0, data_maximum_size);
 }
 
 
@@ -14,14 +15,19 @@ MachineLearningDataAtom::~MachineLearningDataAtom()
 
 std::ifstream& MachineLearningDataAtom::operator>>(std::ifstream &input_stream)
 {
-	input_stream.get(TestChar);
+	input_stream.getline(data, data_maximum_size);
 
 	return input_stream;
 }
 
 std::ofstream& MachineLearningDataAtom::operator<<(std::ofstream &output_stream)
 {
-	output_stream.put(TestChar);
+	size_t data_counter = 0;
+	for (; data[data_counter]!=char(0) && data_counter<data_maximum_size; data_counter++);
+
+	output_stream.write(data, data_counter);
+
+	output_stream << std::endl;
 
 	return output_stream;
 }
@@ -37,7 +43,12 @@ std::ofstream& operator<<(std::ofstream &output_stream, MachineLearningDataAtom 
 }
 
 
-char MachineLearningDataAtom::GetData()
+std::string MachineLearningDataAtom::GetData()
 {
-	return TestChar;
+	return std::string(data);
+}
+
+void MachineLearningDataAtom::SetData(std::string parameter_data)
+{
+	strcpy_s(data, data_maximum_size, parameter_data.c_str());
 }

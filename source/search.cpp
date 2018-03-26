@@ -40,6 +40,8 @@
 #include "uci.h"
 #include "syzygy/tbprobe.h"
 
+#include "MachineLeaningControl.h"
+
 int Options_Junior_Depth;
 bool Options_Junior_Mobility;
 bool Options_Junior_King;
@@ -331,8 +333,11 @@ finalize:
   if (bestThread != this)
       sync_cout << UCI::pv(bestThread->rootPos, bestThread->completedDepth, -VALUE_INFINITE, VALUE_INFINITE) << sync_endl;
 
-  sync_cout << "bestmove " << UCI::move(bestThread->rootMoves[0].pv[0], rootPos.is_chess960());
 
+  MachineLearningControlMain.Answer(bestThread->rootMoves[0].pv[0], rootPos.is_chess960());
+
+  sync_cout << "bestmove " << UCI::move(bestThread->rootMoves[0].pv[0], rootPos.is_chess960());
+  
   if (bestThread->rootMoves[0].pv.size() > 1 || bestThread->rootMoves[0].extract_ponder_from_tt(rootPos))
       std::cout << " ponder " << UCI::move(bestThread->rootMoves[0].pv[1], rootPos.is_chess960());
 
