@@ -6,8 +6,6 @@
 #include <string>
 #include <list>
 
-#include <condition_variable>
-#include <mutex>
 #include <thread>
 
 #include "MachineLearningData.h"

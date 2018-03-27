@@ -6,6 +6,7 @@
 #include <iostream>
 #include <list>
 #include <unordered_set>
+#include <cstring>
 
 #include "MachineLeaningControl.h"
 
@@ -272,7 +273,10 @@ void MachineLearningControl::learning_thread_function()
 					learning_position_call(current_position, input_stream, *states);
 				}
 
-				sync_cout << current_position << sync_endl;
+				if (false)
+				{
+					sync_cout << current_position << sync_endl;
+				}
 
 				Color us = current_position.side_to_move();
 
@@ -731,7 +735,7 @@ void MachineLearningControl::learning_thread_function()
 					}
 				}
 
-				/*/
+				///*/
 				if (CurrentDataUsBestMoves.size() > 0)
 				{
 					std::string local_string("searchmoves ");
@@ -758,11 +762,18 @@ void MachineLearningControl::learning_thread_function()
 
 					input_stream_data += local_string;
 				}
-				/*/
+				///*/
 
 				ClearData();
 			}
 			{
+				std::string input_stream_data_best_moves;
+				if (input_stream_data.length() != 0)
+				{
+					input_stream_data_best_moves = input_stream_data;
+				}
+				input_stream_data = std::string();
+
 				if (final_game_limits.time[0] != 0)// && us == WHITE)
 				{
 					char local_string[data_atom_maximum_size];
@@ -797,6 +808,11 @@ void MachineLearningControl::learning_thread_function()
 					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
 					sprintf_s(local_string, data_atom_maximum_size, "movetime %d ", final_game_limits.movetime);
 					input_stream_data += std::string(local_string);
+				}
+
+				if (input_stream_data_best_moves.length() != 0)
+				{
+					input_stream_data = std::string(" ") + input_stream_data_best_moves;
 				}
 			}
 
