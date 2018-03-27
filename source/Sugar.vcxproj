@@ -366,6 +366,9 @@
     <ClCompile Include="book.cpp" />
     <ClCompile Include="endgame.cpp" />
     <ClCompile Include="evaluate.cpp" />
+    <ClCompile Include="MachineLeaningControl.cpp" />
+    <ClCompile Include="MachineLearningData.cpp" />
+    <ClCompile Include="MachineLearningDataAtom.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="material.cpp" />
     <ClCompile Include="misc.cpp" />
@@ -379,7 +382,7 @@
     <ClCompile Include="thread.cpp" />
     <ClCompile Include="timeman.cpp" />
     <ClCompile Include="tt.cpp" />
-    <ClCompile Include="tzbook.cpp" />
+    <ClCompile Include="polybook.cpp" />
     <ClCompile Include="uci.cpp" />
     <ClCompile Include="ucioption.cpp" />
   </ItemGroup>
@@ -388,6 +391,9 @@
     <ClInclude Include="book.h" />
     <ClInclude Include="endgame.h" />
     <ClInclude Include="evaluate.h" />
+    <ClInclude Include="MachineLeaningControl.h" />
+    <ClInclude Include="MachineLearningData.h" />
+    <ClInclude Include="MachineLearningDataAtom.h" />
     <ClInclude Include="material.h" />
     <ClInclude Include="misc.h" />
     <ClInclude Include="movegen.h" />
@@ -401,7 +407,7 @@
     <ClInclude Include="timeman.h" />
     <ClInclude Include="tt.h" />
     <ClInclude Include="types.h" />
-    <ClInclude Include="tzbook.h" />
+    <ClInclude Include="polybook.h" />
     <ClInclude Include="uci.h" />
     <ClInclude Include="VersionHelpers.h" />
   </ItemGroup>

@@ -1,0 +1,50 @@
+uci 
+setoption name Hash value 32 
+setoption name HashFile value Sugar1.6_hash.hsh 
+isready 
+setoption name Hash value 128 
+isready 
+setoption name UCI_Chess960 value false 
+position startpos moves e2e4 e7e6 d2d4 d7d5 b1c3 d5e4 c3e4 b8d7 g1f3 g8f6 f1d3 f8e7 d1e2 e8g8 c1d2 b7b6 
+go wtime 300000 
+quit 
+uci 
+setoption name HashFile value Sugar1.6_hash.hsh 
+isready 
+setoption name Threads value 1 
+isready 
+isready 
+setoption name UCI_Chess960 value false 
+position startpos moves e2e4 e7e6 d2d4 d7d5 b1c3 d5e4 c3e4 b8d7 g1f3 g8f6 f1d3 f8e7 d1e2 e8g8 c1d2 b7b6 e4f6 d7f6 
+go wtime 295813 
+isready 
+isready 
+setoption name UCI_Chess960 value false 
+position startpos moves e2e4 e7e6 d2d4 d7d5 b1c3 d5e4 c3e4 b8d7 g1f3 g8f6 f1d3 f8e7 d1e2 e8g8 c1d2 b7b6 e4f6 d7f6 e1g1 c8b7 
+go wtime 294532 
+stop 
+quit 
+uci 
+setoption name Hash value 32 
+setoption name HashFile value Sugar1.6_hash.hsh 
+isready 
+setoption name Hash value 128 
+isready 
+setoption name UCI_AnalyseMode value true 
+setoption name UCI_Chess960 value false 
+position startpos moves e2e4 e7e5 
+go infinite 
+stop 
+quit 
+uci 
+setoption name Hash value 32 
+setoption name HashFile value Sugar1.6_hash.hsh 
+isready 
+setoption name Hash value 128 
+isready 
+setoption name UCI_AnalyseMode value true 
+setoption name UCI_Chess960 value false 
+position fen rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2 
+go infinite 
+stop 
+quit 

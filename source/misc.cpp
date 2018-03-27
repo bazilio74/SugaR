@@ -23,6 +23,11 @@
 #undef  _WIN32_WINNT
 #define _WIN32_WINNT 0x0601 // Force to include needed API prototypes
 #endif
+
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include <windows.h>
 // The needed Windows API for processor groups could be missed from old Windows
 // versions, so instead of calling them directly (forcing the linker to resolve
@@ -113,21 +118,18 @@ public:
 
 } // namespace
 
-/// engine_info() returns the full name of the current Stockfish version. This
-/// will be either "Stockfish <Tag> DD-MM-YY" (where DD-MM-YY is the date when
-/// the program was compiled) or "Stockfish <Version>", depending on whether
+/// engine_info() returns the full name of the current SugaR version. This
+/// will be either "SugaR <Tag> DD-MM-YY" (where DD-MM-YY is the date when
+/// the program was compiled) or "SugaR <Version>", depending on whether
 /// Version is empty.
 
-const std::string engine_info(bool to_uci) {
+const string engine_info(bool to_uci) {
 
-  stringstream ss;
-
-  const std::string months("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec");
-  std::string month, day, year;
-  std::stringstream date(__DATE__); // From compiler, format is "Sep 21 2008"
+  const string months("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec");
+  string month, day, year;
+  stringstream ss, date(__DATE__); // From compiler, format is "Sep 21 2008"
 
   ss << "S_XPrO " << Version << setfill('0');
-
 
   if (Version.empty())
   {
@@ -135,12 +137,11 @@ const std::string engine_info(bool to_uci) {
       ss << setw(2) << day << setw(2) << (1 + months.find(month) / 4) << year.substr(2);
   }
 
-
-  ss << (Is64Bit ? " x64" : " x32")
+  ss << (Is64Bit ? " 64" : " 32")
      << (HasPext ? " BMI2" : (HasPopCnt ? " POPCNT" : ""))
      << (to_uci  ? "\nid author ": " by ")
      << "Marco Zerbinati, Sergey Aleksandrovitch Kozlov";
- 
+
 	 return ss.str();
 }
 
@@ -310,7 +311,7 @@ const std::string hardware_info()
 		result << "  CPU Core           : " << siSysInfo.dwNumberOfProcessors << std::endl;
 		//result << "  Processor type     : " << siSysInfo.dwProcessorType << std::endl;
 
-		// Use to convert bytes to MB
+		// Used to convert bytes to MB
 		const size_t local_1000_000 = 1000 * 1000;
 
 		MEMORYSTATUSEX statex;
@@ -513,14 +514,6 @@ int get_group(size_t idx) {
 /// bindThisThread() set the group affinity of the current thread
 
 void bindThisThread(size_t idx) {
-
-  // If OS already scheduled us on a different group than 0 then don't overwrite
-  // the choice, eventually we are one of many one-threaded processes running on
-  // some Windows NUMA hardware, for instance in fishtest. To make it simple,
-  // just check if running threads are below a threshold, in this case all this
-  // NUMA machinery is not needed.
-  if (Threads.size() < 8)
-      return;
 
   // Use only local variables to be thread-safe
   int group = get_group(idx);

@@ -69,7 +69,7 @@
     <ClCompile Include="tt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tzbook.cpp">
+    <ClCompile Include="polybook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="uci.cpp">
@@ -79,6 +79,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="syzygy\tbprobe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MachineLeaningControl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MachineLearningDataAtom.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MachineLearningData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -131,7 +140,7 @@
     <ClInclude Include="types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="tzbook.h">
+    <ClInclude Include="polybook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="uci.h">
@@ -141,6 +150,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VersionHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MachineLeaningControl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MachineLearningDataAtom.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MachineLearningData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
