@@ -95,5 +95,6 @@ int main(int argc, char* argv[]) {
   UCI::loop(argc, argv);
 
   Threads.set(0);
+
   return 0;
 }

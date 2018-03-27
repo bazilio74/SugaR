@@ -36,6 +36,7 @@
 #include "MachineLeaningControl.h"
 void learning(Position& pos, std::istringstream& is, StateListPtr& states);
 void position_make_move(Position& pos, std::istringstream& is, StateListPtr& states);
+void learning_position_call(Position& pos, std::istringstream& is, StateListPtr& states);
 
 using namespace std;
 
@@ -199,6 +200,16 @@ void UCI::loop(int argc, char* argv[]) {
 
 	pos.set(StartFEN, false, &states->back(), uiThread.get());
 
+	std::string position_fen = pos.fen();
+
+	Position learning_pos;
+	StateListPtr learning_states(new std::deque<StateInfo>(1));
+	auto learning_Thread = std::make_shared<Thread>(0);
+
+	learning_pos.set(StartFEN, false, &learning_states->back(), learning_Thread.get());
+
+	std:string learning_position_fen = learning_pos.fen();
+
 	for (int i = 1; i < argc; ++i)
 		cmd += std::string(argv[i]) + " ";
 
@@ -208,8 +219,12 @@ void UCI::loop(int argc, char* argv[]) {
 
 		istringstream is(cmd);
 
+		istringstream learning_is(cmd);
+
 		token.clear(); // Avoid a stale if getline() returns empty or blank line
 		is >> skipws >> token;
+
+		learning_is >> skipws >> token;
 
 		// The GUI sends 'ponderhit' to tell us the user has played the expected move.
 		// So 'ponderhit' will be sent if we were told to ponder on the same move the
@@ -221,7 +236,6 @@ void UCI::loop(int argc, char* argv[]) {
 			|| (token == "ponderhit" && Threads.stopOnPonderhit))
 		{
 			Threads.stop = true;
-			MachineLearningControlMain.LearningExit();
 		}
 
 		else if (token == "ponderhit")
@@ -233,8 +247,57 @@ void UCI::loop(int argc, char* argv[]) {
 			<< "\nuciok" << sync_endl;
 
 		else if (token == "setoption")  setoption(is);
-		else if (token == "go")         go(pos, is, states);
-		else if (token == "position")   position(pos, is, states);
+		else if (token == "go")
+		{
+			if (MachineLearningControlMain.IsLearningInProgress())
+			{
+				Threads.stop = true;
+				MachineLearningControlMain.EndLearning();
+
+				Threads.main()->wait_for_search_finished();
+
+				{
+					std::string input_stream_data("startpos");
+					std::istringstream input_stream(input_stream_data);
+					position(pos, input_stream, states);
+				}
+
+				{
+					std::string input_stream_data("fen ");
+					input_stream_data += position_fen;
+					std::istringstream input_stream(input_stream_data);
+					position(pos, input_stream, states);
+				}
+
+				{
+					std::string input_stream_data("startpos");
+					std::istringstream input_stream(input_stream_data);
+
+					position(learning_pos, input_stream, states);
+				}
+
+				{
+					std::string input_stream_data("fen ");
+					input_stream_data += learning_position_fen;
+					std::istringstream input_stream(input_stream_data);
+					position(learning_pos, input_stream, states);
+				}
+			}
+			else
+			{
+				Threads.stop = true;
+				Threads.main()->wait_for_search_finished();
+			}
+			go(pos, is, states);
+		}
+		else if (token == "position")
+		{
+			position(pos, is, states);
+			position(learning_pos, learning_is, learning_states);
+
+			position_fen = pos.fen();
+			learning_position_fen = learning_pos.fen();
+		}
 		else if (token == "ucinewgame") Search::clear();
 		else if (token == "isready")    sync_cout << "readyok" << sync_endl;
 
@@ -246,13 +309,58 @@ void UCI::loop(int argc, char* argv[]) {
 		else if (token == "move")
 		{
 			position_make_move(pos, is, states);
+			position_make_move(learning_pos, learning_is, learning_states);
+
+			position_fen = pos.fen();
+			learning_position_fen = learning_pos.fen();
 		}
 		else if (token == "learning")
 		{
-			learning(pos, is, states);
+			Threads.stop = true;
+
+			Threads.main()->wait_for_search_finished();
+			
+			{
+				std::string input_stream_data("startpos");
+				std::istringstream input_stream(input_stream_data);
+				position(pos, input_stream, states);
+			}
+
+			{
+				std::string input_stream_data("fen ");
+				input_stream_data += position_fen;
+				std::istringstream input_stream(input_stream_data);
+				position(pos, input_stream, states);
+			}
+
+			{
+				std::string input_stream_data("startpos");
+				std::istringstream input_stream(input_stream_data);
+
+				position(learning_pos, input_stream, states);
+			}
+
+			{
+				std::string input_stream_data("fen ");
+				input_stream_data += learning_position_fen;
+				std::istringstream input_stream(input_stream_data);
+				position(learning_pos, input_stream, states);
+			}
+
+			MachineLearningControlMain.PrepareLearning(learning_pos, learning_is, learning_states);
+			learning(learning_pos, learning_is, learning_states);
 		}
 		else
 			sync_cout << "Unknown command: " << cmd << sync_endl;
+
+		if (token == "quit")
+		{
+			Threads.stop = true;
+
+			MachineLearningControlMain.LearningExit();
+			
+			Threads.main()->wait_for_search_finished();
+		}
 
 	} while (token != "quit" && argc == 1); // Command line args are one-shot
 }
@@ -417,7 +525,7 @@ void position_make_move(Position& current_position, std::istringstream& is, Stat
 
 	if (!is_ok(move))
 	{
-		std::cout << "Game over" << std::endl;
+		std::cout << "Move is not ok" << std::endl;
 
 		return;
 	}
@@ -432,7 +540,7 @@ void position_make_move(Position& current_position, std::istringstream& is, Stat
 		{
 			current_position.undo_move(move);
 
-			std::cout << "Game over" << std::endl;
+			std::cout << "Position is not ok" << std::endl;
 
 			return;
 		}

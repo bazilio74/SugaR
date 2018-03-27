@@ -93,6 +93,7 @@ void init(OptionsMap& o) {
   o["Minimum Thinking Time"] << Option(20, 0, 5000);
   o["Slow Mover"]            << Option(84, 10, 1000);
   o["nodestime"]             << Option(0, 0, 10000);
+  o["Save Machine Learning File"] << Option(false);
   o["Machine Learning File"]		<< Option("SugarMachineLearning.sml", on_MachineLearningFile);
   o["Junior Depth"]					<< Option(MAX_PLY-1, 1, MAX_PLY-1);
   o["Junior Mobility"]				<< Option(true);

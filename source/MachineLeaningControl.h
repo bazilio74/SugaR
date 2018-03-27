@@ -22,6 +22,7 @@ protected:
 	bool learning_in_progress;
 	bool learning_move_returned;
 	bool learning_exit;
+	bool learning_round_finished;
 
 	std::thread learning_thread;
 
@@ -30,6 +31,8 @@ protected:
 	bool is_960;
 	StateListPtr *states;
 	bool current_position_set;
+
+	std::string fen_saved_main;
 
 	typedef std::list<MachineLearningDataAtom> MachineLearningDataList;
 	typedef std::list<MachineLearningDataAtom>::iterator MachineLearningDataListIterator;
@@ -45,14 +48,19 @@ public:
 	//	0 - success
 	//	1 - fail
 	int LoadData();
+
 	//	0 - success
 	//	1 - fail
+	//	2 - not required
 	int SaveData();
 
 	void ClearData();
 
 	void StartLearning(Position &position_parameter, std::istringstream& is, StateListPtr& parameter_states);
 	void EndLearning();
+	void LearningRoundFinished();
+	bool IsLearningInProgress();
+	void PrepareLearning(Position &position_parameter, std::istringstream& is, StateListPtr& parameter_states);
 
 	void LearningExit();
 
