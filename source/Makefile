@@ -34,7 +34,8 @@ PGOBENCH = ./$(EXE) bench 16 1 1000 default movetime
 ### Object files
 OBJS = benchmark.o bitbase.o bitboard.o book.o endgame.o evaluate.o main.o \
 	material.o misc.o movegen.o movepick.o pawns.o position.o psqt.o \
-	search.o thread.o timeman.o tt.o uci.o ucioption.o polybook.o syzygy/tbprobe.o
+	search.o thread.o timeman.o tt.o uci.o ucioption.o polybook.o syzygy/tbprobe.o \
+	MachineLearningDataAtom.o MachineLearningData.o MachineLeaningControl.o 
 
 ### Establish the operating system name
 KERNEL = $(shell uname -s)

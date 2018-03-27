@@ -2,6 +2,8 @@
 
 #include "MachineLearningDataAtom.h"
 
+#include <cstring>
+
 
 MachineLearningDataAtom::MachineLearningDataAtom()
 {
