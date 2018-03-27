@@ -36,7 +36,7 @@
 #include "MachineLeaningControl.h"
 
 void learning(Position& pos, StateListPtr& states, const Search::LimitsType& limits, bool ponderMode, std::istringstream& is);
-void position_make_move(Position& pos, std::istringstream& is, StateListPtr& states);
+void position_make_move(Position& pos, std::string& parameter_string, std::istringstream& is, StateListPtr& states);
 void learning_position_call(Position& pos, std::istringstream& is, StateListPtr& states);
 void go_stub(Position& pos, std::istringstream& is, StateListPtr& states);
 void prepare_position(std::string parameter_fen, Position &position_parameter, StateListPtr& parameter_states);
@@ -212,6 +212,9 @@ void UCI::loop(int argc, char* argv[]) {
 
 	std::string learning_position_fen = learning_pos.fen();
 
+	std::string position_string;
+	std::string position_learning_string;
+
 	for (int i = 1; i < argc; ++i)
 		cmd += std::string(argv[i]) + " ";
 
@@ -221,6 +224,26 @@ void UCI::loop(int argc, char* argv[]) {
 
 		istringstream is(cmd);
 
+		if (false)
+		{
+			istringstream local_is(cmd);
+			std::ofstream output_stream;
+
+			output_stream.open("GUI_commands.txt", std::ios_base::app | std::ios_base::out);
+
+			if (output_stream.is_open())
+			{
+				std::string local_string;
+
+				while (local_is >> local_string)
+				{
+					output_stream << local_string << " ";
+				}
+
+				output_stream << std::endl;
+			}
+		}		
+		
 		istringstream learning_is(cmd);
 
 		token.clear(); // Avoid a stale if getline() returns empty or blank line
@@ -251,11 +274,12 @@ void UCI::loop(int argc, char* argv[]) {
 		else if (token == "setoption")  setoption(is);
 		else if (token == "go")
 		{
+			Threads.stop = true;
 			if (MachineLearningControlMain.IsLearningInProgress())
 			{
-				Threads.stop = true;
 				MachineLearningControlMain.EndLearning();
-
+			}
+			{
 				Threads.main()->wait_for_search_finished();
 
 				StateListPtr state_list_ptr;
@@ -266,37 +290,11 @@ void UCI::loop(int argc, char* argv[]) {
 
 				prepare_position(learning_position_fen, learning_pos, learning_state_list_ptr);
 
-				{
-					std::string input_stream_data("startpos");
-					std::istringstream input_stream(input_stream_data);
-					position(pos, input_stream, states);
-				}
+				std::istringstream position_string_is(position_string);
+				std::istringstream position_learning_string_is(position_learning_string);
 
-				{
-					std::string input_stream_data("fen ");
-					input_stream_data += position_fen;
-					std::istringstream input_stream(input_stream_data);
-					position(pos, input_stream, states);
-				}
-
-				{
-					std::string input_stream_data("startpos");
-					std::istringstream input_stream(input_stream_data);
-
-					position(learning_pos, input_stream, states);
-				}
-
-				{
-					std::string input_stream_data("fen ");
-					input_stream_data += learning_position_fen;
-					std::istringstream input_stream(input_stream_data);
-					position(learning_pos, input_stream, states);
-				}
-			}
-			else
-			{
-				Threads.stop = true;
-				Threads.main()->wait_for_search_finished();
+				position(pos, position_string_is, states);
+				position(learning_pos, position_learning_string_is, learning_states);
 			}
 			go_stub(pos, is, states);
 		}
@@ -304,6 +302,14 @@ void UCI::loop(int argc, char* argv[]) {
 		{
 			position(pos, is, states);
 			position(learning_pos, learning_is, learning_states);
+
+			std::string local_string = cmd;
+
+			size_t position_command_start = local_string.find(token.c_str());
+			local_string = local_string.substr(position_command_start + token.length() + 1);
+
+			position_string = local_string;
+			position_learning_string = local_string;
 
 			position_fen = pos.fen();
 			learning_position_fen = learning_pos.fen();
@@ -322,32 +328,11 @@ void UCI::loop(int argc, char* argv[]) {
 
 			prepare_position(learning_position_fen, learning_pos, learning_state_list_ptr);
 
-			{
-				std::string input_stream_data("startpos");
-				std::istringstream input_stream(input_stream_data);
-				position(pos, input_stream, states);
-			}
+			std::istringstream position_string_is(position_string);
+			std::istringstream position_learning_string_is(position_learning_string);
 
-			{
-				std::string input_stream_data("fen ");
-				input_stream_data += position_fen;
-				std::istringstream input_stream(input_stream_data);
-				position(pos, input_stream, states);
-			}
-
-			{
-				std::string input_stream_data("startpos");
-				std::istringstream input_stream(input_stream_data);
-
-				position(learning_pos, input_stream, states);
-			}
-
-			{
-				std::string input_stream_data("fen ");
-				input_stream_data += learning_position_fen;
-				std::istringstream input_stream(input_stream_data);
-				position(learning_pos, input_stream, states);
-			}
+			position(pos, position_string_is, states);
+			position(learning_pos, position_learning_string_is, learning_states);
 
 			pos.flip();
 		}
@@ -361,32 +346,11 @@ void UCI::loop(int argc, char* argv[]) {
 
 			prepare_position(learning_position_fen, learning_pos, learning_state_list_ptr);
 
-			{
-				std::string input_stream_data("startpos");
-				std::istringstream input_stream(input_stream_data);
-				position(pos, input_stream, states);
-			}
+			std::istringstream position_string_is(position_string);
+			std::istringstream position_learning_string_is(position_learning_string);
 
-			{
-				std::string input_stream_data("fen ");
-				input_stream_data += position_fen;
-				std::istringstream input_stream(input_stream_data);
-				position(pos, input_stream, states);
-			}
-
-			{
-				std::string input_stream_data("startpos");
-				std::istringstream input_stream(input_stream_data);
-
-				position(learning_pos, input_stream, states);
-			}
-
-			{
-				std::string input_stream_data("fen ");
-				input_stream_data += learning_position_fen;
-				std::istringstream input_stream(input_stream_data);
-				position(learning_pos, input_stream, states);
-			}
+			position(pos, position_string_is, states);
+			position(learning_pos, position_learning_string_is, learning_states);
 
 			bench(pos, is, states);
 		}
@@ -400,40 +364,33 @@ void UCI::loop(int argc, char* argv[]) {
 
 			prepare_position(learning_position_fen, learning_pos, learning_state_list_ptr);
 
-			{
-				std::string input_stream_data("startpos");
-				std::istringstream input_stream(input_stream_data);
-				position(pos, input_stream, states);
-			}
+			std::istringstream position_string_is(position_string);
+			std::istringstream position_learning_string_is(position_learning_string);
 
-			{
-				std::string input_stream_data("fen ");
-				input_stream_data += position_fen;
-				std::istringstream input_stream(input_stream_data);
-				position(pos, input_stream, states);
-			}
-
-			{
-				std::string input_stream_data("startpos");
-				std::istringstream input_stream(input_stream_data);
-
-				position(learning_pos, input_stream, states);
-			}
-
-			{
-				std::string input_stream_data("fen ");
-				input_stream_data += learning_position_fen;
-				std::istringstream input_stream(input_stream_data);
-				position(learning_pos, input_stream, states);
-			}
+			position(pos, position_string_is, states);
+			position(learning_pos, position_learning_string_is, learning_states);
 
 			sync_cout << pos << sync_endl;
 		}
 		else if (token == "eval")  sync_cout << Eval::trace(pos) << sync_endl;
 		else if (token == "move")
 		{
-			position_make_move(pos, is, states);
-			position_make_move(learning_pos, learning_is, learning_states);
+			position_make_move(pos, position_string, is,  states);
+			position_make_move(learning_pos, position_learning_string, learning_is, learning_states);
+
+			StateListPtr state_list_ptr;
+
+			prepare_position(position_fen, pos, state_list_ptr);
+
+			StateListPtr learning_state_list_ptr;
+
+			prepare_position(learning_position_fen, learning_pos, learning_state_list_ptr);
+
+			std::istringstream position_string_is(position_string);
+			std::istringstream position_learning_string_is(position_learning_string);
+
+			position(pos, position_string_is, states);
+			position(learning_pos, position_learning_string_is, learning_states);
 
 			position_fen = pos.fen();
 			learning_position_fen = learning_pos.fen();
@@ -451,33 +408,12 @@ void UCI::loop(int argc, char* argv[]) {
 			StateListPtr learning_state_list_ptr;
 
 			prepare_position(learning_position_fen, learning_pos, learning_state_list_ptr);
-			
-			{
-				std::string input_stream_data("startpos");
-				std::istringstream input_stream(input_stream_data);
-				position(pos, input_stream, states);
-			}
 
-			{
-				std::string input_stream_data("fen ");
-				input_stream_data += position_fen;
-				std::istringstream input_stream(input_stream_data);
-				position(pos, input_stream, states);
-			}
+			std::istringstream position_string_is(position_string);
+			std::istringstream position_learning_string_is(position_learning_string);
 
-			{
-				std::string input_stream_data("startpos");
-				std::istringstream input_stream(input_stream_data);
-
-				position(learning_pos, input_stream, states);
-			}
-
-			{
-				std::string input_stream_data("fen ");
-				input_stream_data += learning_position_fen;
-				std::istringstream input_stream(input_stream_data);
-				position(learning_pos, input_stream, states);
-			}
+			position(pos, position_string_is, states);
+			position(learning_pos, position_learning_string_is, learning_states);
 
 			Search::LimitsType search_limits = Search::Limits;
 
@@ -621,7 +557,7 @@ void learning_position_call(Position& pos, std::istringstream& is, StateListPtr&
 	position(pos, is, states);
 }
 
-void position_make_move(Position& current_position, std::istringstream& is, StateListPtr& states)
+void position_make_move(Position& current_position, std::string &parameter_string, std::istringstream& is, StateListPtr& states)
 {
 	Color us = current_position.side_to_move();
 
@@ -655,120 +591,11 @@ void position_make_move(Position& current_position, std::istringstream& is, Stat
 		return;
 	}
 
-	string token;
+	std::string token;
 
 	is >> token;
 
-	Move move = UCI::to_move(current_position, token);
-
-	StateInfo st;
-	std::memset(&st, 0, sizeof(StateInfo));
-
-	std::string fen_saved;
-
-	if (!is_ok(move))
-	{
-		std::cout << "Move is not ok" << std::endl;
-
-		return;
-	}
-
-	if (current_position.legal(move))
-	{
-		current_position.do_move(move, st);
-
-		fen_saved = current_position.fen();
-
-		if (!current_position.pos_is_ok())
-		{
-			current_position.undo_move(move);
-
-			std::cout << "Position is not ok" << std::endl;
-
-			return;
-		}
-
-		current_position.undo_move(move);
-
-		if (type_of(move) == CASTLING)
-		{
-			if (current_position.side_to_move() == WHITE)
-			{
-				size_t symbol_position_w;
-				size_t symbol_position;
-				symbol_position_w = fen_saved.find(' ');
-				assert(symbol_position_w != std::string::npos);
-
-				symbol_position = fen_saved.find('K', symbol_position_w);
-				if (symbol_position == std::string::npos)
-				{
-					symbol_position = fen_saved.find('Q', symbol_position_w);
-				}
-
-				if (symbol_position != std::string::npos)
-				{
-					if (fen_saved.at(symbol_position) == 'K')
-					{
-						fen_saved.erase(symbol_position, 1);
-					}
-				}
-
-				symbol_position = fen_saved.find('Q', symbol_position_w);
-				if (symbol_position != std::string::npos)
-				{
-					if (fen_saved.at(symbol_position) == 'Q')
-					{
-						fen_saved.erase(symbol_position, 1);
-					}
-				}
-			}
-			else
-			{
-				if (current_position.side_to_move() == BLACK)
-				{
-					size_t symbol_position_b;
-					size_t symbol_position;
-					symbol_position_b = fen_saved.find(' ');
-					assert(symbol_position_b != std::string::npos);
-
-					symbol_position = fen_saved.find('k', symbol_position_b);
-					if (symbol_position == std::string::npos)
-					{
-						symbol_position = fen_saved.find('q', symbol_position_b);
-					}
-
-					if (symbol_position != std::string::npos)
-					{
-						if (fen_saved.at(symbol_position) == 'k')
-						{
-							fen_saved.erase(symbol_position, 1);
-						}
-					}
-
-					symbol_position = fen_saved.find('q', symbol_position_b);
-					if (symbol_position != std::string::npos)
-					{
-						if (fen_saved.at(symbol_position) == 'q')
-						{
-							fen_saved.erase(symbol_position, 1);
-						}
-					}
-				}
-				else
-				{
-					assert(false);
-				}
-			}
-		}
-
-		{
-			std::string input_stream_data("fen ");
-			input_stream_data += fen_saved;
-			std::istringstream input_stream(input_stream_data);
-
-			learning_position_call(current_position, input_stream, states);
-		}
-	}
+	parameter_string += " " + token;
 }
 
 void go_stub(Position& pos, istringstream& is, StateListPtr& states) {

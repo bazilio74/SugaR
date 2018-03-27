@@ -1324,3 +1324,1035 @@ g3e5
 [Round "1"]
 [Result "*"]
 
+
+
+[FEN "r2q1rk1/ppp1ppbp/2np1np1/8/2PPP1b1/2NBBN2/PP3PPP/R2Q1RK1 b - - 6 8"]
+[Round "1"]
+[Result "*"]
+
+e7e5
+d4e5
+c6e5
+d3e2
+e5f3
+e2f3
+g4f3
+d1f3
+f6d7
+a1d1
+g7c3
+b2c3
+d8h4
+a2a4
+a8e8
+e3f4
+d7c5
+g2g3
+h4f6
+
+
+[FEN "r2q1rk1/ppp2pbp/2np1np1/3Pp3/2P1P1b1/2NBBN2/PP3PPP/R2Q1RK1 b - - 0 9"]
+[Round "1"]
+[Result "0-1"]
+
+c6d4
+d3e2
+d4e2
+d1e2
+f6d7
+h2h3
+g4f3
+e2f3
+f7f5
+f1e1
+f5f4
+e3d2
+a8c8
+f3g4
+a7a6
+a2a4
+d7c5
+g4d1
+c5d3
+e1f1
+f4f3
+d2e3
+f3g2
+g1g2
+d3f4
+g2h2
+c7c6
+d1g4
+h7h5
+g4d1
+d8h4
+d1f3
+c6d5
+c4d5
+c8c4
+f3g3
+h4g3
+h2g3
+g7f6
+f2f3
+f4d3
+e3h6
+f8c8
+c3e2
+c4c2
+a1a3
+c2e2
+h3h4
+c8c2
+f1f2
+e2f2
+b2b3
+f2g2
+g3h3
+g2h2
+h3g3
+f6h4
+
+
+[FEN "r2q1rk1/ppp2pbp/2np1np1/3Pp3/2P1P1b1/2NBBN2/PP3PPP/R2Q1RK1 b - - 0 9"]
+[Round "2"]
+[Result "*"]
+
+c6d4
+d3e2
+d4e2
+d1e2
+
+
+[FEN "r2q1rk1/ppp2pbp/3p1np1/3Pp3/2PBP1b1/2NB1N2/PP3PPP/R2Q1RK1 b - - 0 10"]
+[Round "1"]
+[Result "*"]
+
+e5d4
+c3b5
+f6d7
+d1c2
+g4f3
+g2f3
+a7a6
+a2a4
+a6b5
+c4c5
+d8h4
+c2c1
+g7e5
+f1e1
+e5f4
+c1c2
+d7e5
+
+
+[FEN "r2q1rk1/ppp2pbp/3p1np1/3P4/2PpP1b1/3B1N2/PP3PPP/RN1Q1RK1 b - - 1 11"]
+[Round "1"]
+[Result "*"]
+
+f6h5
+h2h3
+g4d7
+d1d2
+d8f6
+
+
+[FEN "r2q1rk1/ppp2pbp/3p2p1/3P3n/2PpP1b1/3B1N2/PP1N1PPP/R2Q1RK1 b - - 3 12"]
+[Round "1"]
+[Result "*"]
+
+h5f4
+d1c2
+c7c5
+f1e1
+g4d7
+g2g3
+f4h3
+g1g2
+d8f6
+e1f1
+a8d8
+f3g1
+h3g1
+g2g1
+d7h3
+f1e1
+f8e8
+f2f4
+h3g4
+c2a4
+g6g5
+e1f1
+a7a6
+a2a3
+f6e7
+a4c2
+a6a5
+
+
+[FEN "r2q1rk1/ppp2pbp/3p2p1/3P4/2PpPnb1/3B1N2/PPQN1PPP/R4RK1 b - - 5 13"]
+[Round "1"]
+[Result "*"]
+
+c7c5
+f1e1
+d8d7
+g2g3
+f4d3
+c2d3
+a8e8
+f3h4
+f7f5
+f2f3
+g4h3
+f3f4
+h3g4
+e4f5
+g6f5
+h4g2
+a7a6
+g2h4
+b7b5
+d3f1
+d4d3
+f1d3
+b5c4
+d2c4
+g7d4
+e1e3
+d7b5
+h4g2
+d4e3
+g2e3
+e8e3
+d3e3
+b5c4
+a2a3
+g4h5
+e3c3
+c4d5
+a1e1
+f8e8
+e1e8
+
+
+[FEN "r2q1rk1/pp3pbp/3p2p1/2pP4/2PpPnb1/3B1N1P/PPQN1PP1/R4RK1 b - - 0 14"]
+[Round "1"]
+[Result "*"]
+
+g4h3
+g2h3
+d8d7
+f3g5
+h7h6
+e4e5
+g7e5
+d3f5
+g6f5
+g5f3
+e5f6
+g1h2
+g8h8
+f1g1
+f8g8
+g1g3
+a8e8
+a1e1
+h6h5
+c2b1
+b7b5
+c4b5
+h5h4
+g3g8
+e8g8
+e1g1
+g8g1
+f3g1
+f4d5
+d2c4
+d7b5
+b1c1
+h8g7
+b2b3
+b5a6
+a2a4
+a6b7
+c4a5
+b7e7
+c1d1
+e7c7
+b3b4
+d5b4
+a5b3
+c7c6
+g1f3
+c6a4
+d1g1
+g7f8
+b3d2
+d4d3
+g1f1
+a4a1
+d2b1
+c5c4
+f1c1
+f8g8
+h2g2
+c4c3
+c1e1
+c3c2
+f3d2
+c2b1r
+e1b1
+a1c3
+d2f3
+g8g7
+f3e1
+d3d2
+e1f3
+b4d3
+b1g1
+g7f8
+
+
+[FEN "r2q1rk1/pp3pbp/3p2p1/2pP4/2PpPn2/3B1N1P/PPQN1P2/R4RK1 b - - 0 15"]
+[Round "1"]
+[Result "0-1"]
+
+d8d7
+f1d1
+f4h3
+g1h2
+h3f2
+h2g3
+f2g4
+d2f1
+a8e8
+c2g2
+h7h5
+a1b1
+d7e7
+f1d2
+g7h6
+g2h3
+g4e3
+g3h2
+h6f4
+h2h1
+g8g7
+d1g1
+e3g4
+b1f1
+f8h8
+d3c2
+f4e3
+g1g2
+b7b6
+c2a4
+e8d8
+f3h4
+d8b8
+a4c2
+e3d2
+e4e5
+d2e3
+e5e6
+f7f5
+h4g6
+g7g6
+f1f5
+g6g7
+a2a3
+b8f8
+b2b3
+f8f5
+c2f5
+e7g5
+f5d3
+e3f2
+d3f1
+f2h4
+h1g1
+h8f8
+a3a4
+f8f1
+g1f1
+g5c1
+f1e2
+c1c2
+e2f3
+c2b3
+f3e4
+b3h3
+g2e2
+g4f6
+e4f4
+h3g4
+
+
+[FEN "r4rk1/pp1q1pbp/3p2p1/2pP4/2PpPn2/3B1N1P/PPQN1P2/R3R1K1 b - - 2 16"]
+[Round "1"]
+[Result "*"]
+
+f4h3
+g1h1
+d7g4
+e1f1
+h3f4
+f1g1
+g4h3
+f3h2
+h3d3
+c2d3
+f4d3
+
+
+[FEN "r4rk1/pp1q1pbp/3p2p1/2pP4/2PpP3/3B1N1n/PPQN1P2/R3R2K b - - 1 17"]
+[Round "1"]
+[Result "0-1"]
+
+d7g4
+e1e2
+h3f4
+a1g1
+g4h5
+f3h2
+f4e2
+d3e2
+h5e2
+h2f3
+f7f5
+a2a3
+f5e4
+g1e1
+d4d3
+c2b1
+e2f2
+d2e4
+f2f3
+h1h2
+g7e5
+h2g1
+f3g4
+e4g3
+g4g3
+g1h1
+g3h2
+
+
+[FEN "r4rk1/pp1q1pbp/3p2p1/2pP4/2PpP3/3B1N1n/PPQN1P2/R3R2K b - - 1 17"]
+[Round "2"]
+[Result "*"]
+
+d7g4
+e1f1
+h3f4
+f1g1
+g4h3
+f3h2
+h3d3
+c2d3
+f4d3
+a2a3
+
+
+[FEN "r4rk1/pp3pbp/3p2p1/2pP4/2PpP1q1/3B1N1n/PPQNRP2/R6K b - - 3 18"]
+[Round "1"]
+[Result "*"]
+
+h3f4
+a1g1
+g4h5
+f3h2
+f4e2
+g1g4
+f7f5
+e4f5
+g6f5
+d2e4
+h5h6
+c2e2
+f5g4
+e2g4
+a8e8
+d3f1
+f8f4
+g4g1
+f4e4
+g1g3
+e8e5
+f2f3
+e5g5
+g3g5
+h6g5
+f3e4
+
+
+[FEN "r4rk1/pp3pbp/3p2p1/2pP4/2PpPnq1/3B1N2/PPQNRP2/6RK b - - 5 19"]
+[Round "1"]
+[Result "*"]
+
+g4h5
+f3h2
+f4e2
+g1g4
+f7f5
+d3e2
+f5g4
+e2g4
+h5h6
+h1g1
+f8f2
+g1f2
+h6h2
+f2e1
+h2g3
+
+
+[FEN "r4rk1/pp3pbp/3p2p1/2pP3q/2PpPn2/3B4/PPQNRP1N/6RK b - - 7 20"]
+[Round "1"]
+[Result "*"]
+
+f4e2
+d3e2
+h5e2
+a2a3
+g7h6
+h2f3
+h6d2
+f3d2
+e2f2
+g1g2
+f2h4
+h1g1
+a8e8
+c2d1
+f7f5
+g2h2
+h4g4
+d1g4
+f5g4
+b2b4
+c5b4
+a3b4
+b7b6
+h2g2
+h7h5
+g2g3
+a7a5
+b4a5
+
+
+[FEN "r4rk1/pp3pbp/3p2p1/2pP3q/2PpP3/8/PPQNBP1N/6RK b - - 0 21"]
+[Round "1"]
+[Result "*"]
+
+h5e2
+a2a3
+g7h6
+h2f3
+h6d2
+h1g2
+a8e8
+g1e1
+e2e1
+f3e1
+d2e1
+c2d3
+f7f5
+b2b3
+f5e4
+d3d1
+e1f2
+d1d2
+e4e3
+
+
+[FEN "r4rk1/pp3pbp/3p2p1/2pP4/2PpP3/8/PP1NqP1N/3Q2RK b - - 1 22"]
+[Round "1"]
+[Result "0-1"]
+
+e2f2
+g1g4
+f2e3
+d2f3
+f7f5
+g4g2
+f5e4
+f3g1
+e3d3
+d1d3
+e4d3
+h2g4
+d3d2
+g2d2
+a8e8
+h1g2
+h7h5
+g4f2
+g6g5
+d2d3
+e8e3
+d3e3
+d4e3
+f2d1
+g7d4
+a2a3
+g8f7
+b2b3
+f7g6
+g2h3
+f8f2
+d1e3
+d4e3
+a3a4
+e3f4
+g1f3
+g5g4
+h3h4
+g4f3
+b3b4
+f2h2
+
+
+[FEN "r4rk1/pp3pbp/3p2p1/2pP4/2PpP3/8/PP1NqP1N/3Q2RK b - - 1 22"]
+[Round "2"]
+[Result "*"]
+
+e2f2
+
+
+[FEN "r4rk1/pp3pbp/3p2p1/2pP4/2PpP3/8/PP1N1q1N/4Q1RK b - - 1 23"]
+[Round "1"]
+[Result "0-1"]
+
+f2e1
+g1e1
+a8e8
+a2a4
+d4d3
+h2f3
+f7f5
+h1g2
+g7b2
+a4a5
+b2c3
+g2g3
+f5e4
+e1e4
+g8g7
+e4e6
+e8e6
+d5e6
+c3a5
+d2e4
+f8e8
+f3d2
+e8e6
+e4g5
+e6e8
+g5e4
+a5d2
+e4d6
+e8e3
+g3h2
+d2c1
+d6e8
+e3e8
+h2g1
+d3d2
+g1g2
+d2d1q
+g2g3
+e8e3
+g3f2
+d1d2
+f2g1
+e3e1
+
+
+[FEN "r4rk1/pp3pbp/3p2p1/2pP4/2PpP3/8/PP1N3N/4R2K b - - 0 24"]
+[Round "1"]
+[Result "*"]
+
+a8e8
+h2g4
+f7f5
+g4f2
+g7h6
+d2f1
+f8f6
+h1g1
+d4d3
+a2a3
+d3d2
+e1d1
+f5e4
+f2g4
+f6f4
+g4h6
+g8g7
+d1d2
+g7h6
+d2e2
+h6g7
+e2e1
+e8e5
+
+
+[FEN "4rrk1/pp3pbp/3p2p1/2pP4/2PpP3/8/PP1N3N/5R1K b - - 2 25"]
+[Round "1"]
+[Result "*"]
+
+f7f5
+e4e5
+g7e5
+d2f3
+e5h2
+f3h2
+g8f7
+a2a4
+e8e2
+h2f3
+f8e8
+f3g1
+e2c2
+f1f3
+d4d3
+f3d3
+c2b2
+d3h3
+f7g7
+h3d3
+g7f6
+d3g3
+b2b1
+h1h2
+f5f4
+g3f3
+g6g5
+f3f2
+f6f5
+g1h3
+e8e1
+a4a5
+
+
+[FEN "4rrk1/pp4bp/3p2p1/2pP1P2/2Pp4/8/PP1N3N/5R1K b - - 0 26"]
+[Round "1"]
+[Result "*"]
+
+e8e2
+f5g6
+e2d2
+f1f8
+g7f8
+h1g1
+h7g6
+h2g4
+d4d3
+b2b4
+c5b4
+g4f2
+g8g7
+g1f1
+f8e7
+f1e1
+d2a2
+f2d3
+a2c2
+d3f4
+e7f6
+e1d1
+c2c4
+f4e6
+g7f7
+d1e2
+a7a5
+e2d2
+a5a4
+d2d3
+c4c3
+d3d2
+a4a3
+e6f4
+a3a2
+f4e2
+a2a1q
+e2c3
+a1c3
+d2e2
+c3c2
+e2f3
+c2d2
+f3e4
+d2c2
+e4e3
+c2c1
+e3e2
+c1c2
+e2f3
+c2d3
+f3g4
+
+
+[FEN "5rk1/pp4bp/3p2p1/2pP1P2/2Pp4/5N2/PP1Nr3/5R1K b - - 2 27"]
+[Round "1"]
+[Result "0-1"]
+
+f8f5
+b2b3
+g7h6
+d2e4
+e2e4
+h1g2
+d4d3
+g2h1
+e4e2
+f3h2
+d3d2
+f1g1
+f5h5
+g1b1
+e2h2
+h1g1
+h6e3
+g1f1
+h5f5
+
+
+[FEN "5rk1/pp4bp/3p2p1/2pP1P2/2Pp4/5N2/PP1Nr3/5R1K b - - 2 27"]
+[Round "2"]
+[Result "0-1"]
+
+f8f5
+a2a3
+g7h6
+f1e1
+d4d3
+e1e2
+d3e2
+h1h2
+h6d2
+h2g3
+f5f3
+g3f3
+e2e1q
+b2b3
+e1e3
+f3g4
+h7h5
+g4h4
+d2e1
+
+
+[FEN "6k1/pp4bp/3p2p1/2pP1r2/2Pp4/5N2/PP1Nr3/5RK1 b - - 1 28"]
+[Round "1"]
+[Result "0-1"]
+
+g7h6
+f1e1
+h6e3
+g1f1
+e2d2
+e1e2
+f5f3
+f1g2
+f3f2
+e2f2
+d2f2
+g2g3
+d4d3
+b2b3
+d3d2
+g3h4
+e3f4
+a2a3
+d2d1q
+a3a4
+d1h5
+
+
+[FEN "6k1/pp5p/3p2pb/2pP1r2/2Pp4/5N2/PP1Nr3/4R1K1 b - - 3 29"]
+[Round "1"]
+[Result "0-1"]
+
+h6e3
+g1f1
+e2f2
+f1g1
+f2d2
+e1e3
+d4e3
+f3e1
+f5f2
+e1g2
+f2g2
+g1f1
+d2f2
+f1e1
+g2g1
+
+
+[FEN "6k1/pp5p/3p2pb/2pP1r2/2Pp4/5N2/PP1Nr3/4R1K1 b - - 3 29"]
+[Round "2"]
+[Result "*"]
+
+h6e3
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/2Pp4/4bN2/PP1Nr3/4RK2 b - - 5 30"]
+[Round "1"]
+[Result "0-1"]
+
+e2f2
+f1g1
+f2d2
+e1e3
+d4e3
+f3e1
+f5f2
+e1g2
+f2g2
+g1h1
+g2f2
+a2a3
+d2d1
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/2Pp4/4bN2/PP1Nr3/4RK2 b - - 5 30"]
+[Round "2"]
+[Result "0-1"]
+
+e2f2
+f1g1
+f2d2
+e1e3
+d4e3
+f3e1
+f5f2
+e1g2
+f2g2
+g1h1
+g2f2
+a2a3
+f2f1
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/2Pp4/4bN2/PP1N1r2/4R1K1 b - - 7 31"]
+[Round "1"]
+[Result "0-1"]
+
+f2d2
+e1e3
+d4e3
+f3e1
+f5f2
+e1g2
+f2g2
+g1f1
+d2f2
+f1e1
+g2g1
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/2Pp4/4bN2/PP1N1r2/4R1K1 b - - 7 31"]
+[Round "2"]
+[Result "*"]
+
+f2d2
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/2Pp4/4RN2/PP1r4/6K1 b - - 0 32"]
+[Round "1"]
+[Result "0-1"]
+
+d4e3
+a2a3
+f5f3
+b2b3
+f3f2
+a3a4
+d2d1
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/2Pp4/4RN2/PP1r4/6K1 b - - 0 32"]
+[Round "2"]
+[Result "*"]
+
+d4e3
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/2P5/4p3/PP1N4/6K1 b - - 0 33"]
+[Round "1"]
+[Result "0-1"]
+
+e3d2
+a2a3
+d2d1q
+g1h2
+f5g5
+b2b3
+d1h5
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/2P5/4p3/PP1N4/6K1 b - - 0 33"]
+[Round "2"]
+[Result "*"]
+
+e3d2
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/P1P5/8/1P1p4/6K1 b - - 0 34"]
+[Round "1"]
+[Result "0-1"]
+
+d2d1q
+g1h2
+d1g4
+b2b3
+f5h5
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/P1P5/8/1P1p4/6K1 b - - 0 34"]
+[Round "2"]
+[Result "0-1"]
+
+d2d1q
+g1h2
+d1g4
+b2b3
+f5h5
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/P1P5/8/1P4K1/3q4 b - - 1 35"]
+[Round "1"]
+[Result "0-1"]
+
+d1g4
+g2h2
+f5h5
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/P1P5/8/1P4K1/3q4 b - - 1 35"]
+[Round "2"]
+[Result "0-1"]
+
+d1g4
+g2h2
+f5h5
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/P1P3q1/8/1P5K/8 b - - 3 36"]
+[Round "1"]
+[Result "0-1"]
+
+f5h5
+
+
+[FEN "6k1/pp5p/3p2p1/2pP1r2/P1P3q1/8/1P5K/8 b - - 3 36"]
+[Round "2"]
+[Result "0-1"]
+
+f5h5
