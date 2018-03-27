@@ -21,6 +21,11 @@ void learning_go_call(Position& pos, std::istringstream& is, StateListPtr& state
 void learning_position_call(Position& pos, std::istringstream& is, StateListPtr& states);
 void go(Position& pos, StateListPtr& states, Search::LimitsType limits, bool ponderMode);
 
+inline void sleep_1_milli_second()
+{
+	std::this_thread::sleep_for(std::chrono::milliseconds(1));
+}
+
 
 MachineLearningControl::MachineLearningControl()
 	:learning_in_progress(false), learning_move_returned(true), current_position_set(false), learning_round_finished(false), learning_exit(false),
@@ -154,20 +159,24 @@ void MachineLearningControl::StartLearning(Position &position_parameter, std::is
 
 	final_game_limits = limits;
 
-	int time_corrector = games_to_simulate * 2;
-	//	"games_to_simulate" is to time for each simulated games and "games_to_simulate" is to time for best moves from database
+	double alpha = 6.0;
+	double beta = 4.0;
 
-	game_simulation_limits.time[0] /= time_corrector;
-	game_simulation_limits.time[1] /= time_corrector;
-	game_simulation_limits.inc[0] /= time_corrector;
-	game_simulation_limits.inc[1] /= time_corrector;
-	game_simulation_limits.movetime /= time_corrector;
+	double time_corrector_1 = (beta) / (alpha + beta)/ games_to_simulate;
+	double time_corrector_2 = (alpha) / (alpha+beta);
+	//	"time_corrector_1" is time part for each simulated games and "time_corrector_2" is time part for best moves from database
 
-	final_game_limits.time[0] /= 2;
-	final_game_limits.time[1] /= 2;
-	final_game_limits.inc[0] /= 2;
-	final_game_limits.inc[1] /= 2;
-	final_game_limits.movetime /= 2;
+	game_simulation_limits.time[0]		=	int(time_corrector_1 * game_simulation_limits.time[0]);
+	game_simulation_limits.time[1]		=	int(time_corrector_1 * game_simulation_limits.time[1]);
+	game_simulation_limits.inc[0]		=	int(time_corrector_1 * game_simulation_limits.inc[0]);
+	game_simulation_limits.inc[1]		=	int(time_corrector_1 * game_simulation_limits.inc[1]);
+	game_simulation_limits.movetime		=	int(time_corrector_1 * game_simulation_limits.movetime);
+
+	final_game_limits.time[0]			=	int(time_corrector_2 * final_game_limits.time[0]);
+	final_game_limits.time[1]			=	int(time_corrector_2 * final_game_limits.time[1]);
+	final_game_limits.inc[0]			=	int(time_corrector_2 * final_game_limits.inc[0]);
+	final_game_limits.inc[1]			=	int(time_corrector_2 * final_game_limits.inc[1]);
+	final_game_limits.movetime			=	int(time_corrector_2 * final_game_limits.movetime);
 }
 
 
@@ -586,8 +595,10 @@ void MachineLearningControl::learning_thread_function()
 				auto MachineLearningDataStoreIterator = MachineLearningDataStore.begin();
 				for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
 				{
+					sleep_1_milli_second();
 					for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
 					{
+						sleep_1_milli_second();
 						if (MachineLearningDataStoreIterator->GetData() == CurrentDataFen)
 						{
 							break;
@@ -605,11 +616,13 @@ void MachineLearningControl::learning_thread_function()
 
 						for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
 						{
+							sleep_1_milli_second();
 							if (MachineLearningDataStoreIterator->GetData() == CurrentDataResult1)
 							{
 								MachineLearningDataStoreIterator++;
 								for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
 								{
+									sleep_1_milli_second();
 									if (MachineLearningDataStoreIterator->GetData() != std::string(""))
 									{
 										CurrentDataMoves1.push_back(MachineLearningDataStoreIterator->GetData());
@@ -626,6 +639,7 @@ void MachineLearningControl::learning_thread_function()
 									MachineLearningDataStoreIterator++;
 									for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
 									{
+										sleep_1_milli_second();
 										if (MachineLearningDataStoreIterator->GetData() != std::string(""))
 										{
 											CurrentDataMoves2.push_back(MachineLearningDataStoreIterator->GetData());
@@ -641,6 +655,7 @@ void MachineLearningControl::learning_thread_function()
 										MachineLearningDataStoreIterator++;
 										for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
 										{
+											sleep_1_milli_second();
 											if (MachineLearningDataStoreIterator->GetData() != std::string(""))
 											{
 												CurrentDataMoves3.push_back(MachineLearningDataStoreIterator->GetData());
@@ -659,6 +674,7 @@ void MachineLearningControl::learning_thread_function()
 											MachineLearningDataStoreIterator++;
 											for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
 											{
+												sleep_1_milli_second();
 												if (MachineLearningDataStoreIterator->GetData() != std::string(""))
 												{
 													CurrentDataMoves4.push_back(MachineLearningDataStoreIterator->GetData());
