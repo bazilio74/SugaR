@@ -189,7 +189,7 @@ void MachineLearningControl::learning_thread_function()
 
 		constexpr size_t game_to_simulate = 2;//100;
 
-		for (size_t game_number = 0; game_number<game_to_simulate && !learning_exit; game_number++)
+		for (size_t game_number = 1; game_number<=game_to_simulate && !learning_exit; game_number++)
 		{
 			StateInfo st;
 			std::memset(&st, 0, sizeof(StateInfo));
@@ -203,6 +203,14 @@ void MachineLearningControl::learning_thread_function()
 
 				std::string local_string;
 
+				local_string = std::string("");
+				MachineLearningDataAtomCurrent.SetData(local_string);
+				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
+
+				local_string = std::string("");
+				MachineLearningDataAtomCurrent.SetData(local_string);
+				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
+
 				local_string = std::string("[FEN \"") + fen_saved + std::string("\"]");
 				MachineLearningDataAtomCurrent.SetData(local_string);
 				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
@@ -212,6 +220,10 @@ void MachineLearningControl::learning_thread_function()
 				const char local_char_buffer_mask[] = "[Round \"%d\"]";
 				sprintf_s(local_char_buffer, data_atom_maximum_size, local_char_buffer_mask, game_number);
 				local_string = local_char_buffer;
+				MachineLearningDataAtomCurrent.SetData(local_string);
+				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
+
+				local_string = std::string("[Result \"*\"]");
 				MachineLearningDataAtomCurrent.SetData(local_string);
 				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
 
@@ -248,6 +260,25 @@ void MachineLearningControl::learning_thread_function()
 
 					std::cout << "Game over: draw" << std::endl;
 
+					{
+						auto MachineLearningDataAtomIteratorCurrent = MachineLearningDataStore.rbegin();
+
+						for (; MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend(); MachineLearningDataAtomIteratorCurrent++)
+						{
+							if (MachineLearningDataAtomIteratorCurrent->GetData() == std::string("[Result \"*\"]"))
+							{
+								break;
+							}
+						}
+
+						if (MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend())
+						{
+							std::string game_result = std::string("1/2-1/2");
+							std::string local_string = std::string("[Result \"") + game_result + std::string("\"]");
+							MachineLearningDataAtomIteratorCurrent->SetData(local_string);
+						}
+					}
+
 					continue;
 				}
 
@@ -262,12 +293,50 @@ void MachineLearningControl::learning_thread_function()
 						if (us == WHITE)
 						{
 							std::cout << "Game over: black wins" << std::endl;
+
+							{
+								auto MachineLearningDataAtomIteratorCurrent = MachineLearningDataStore.rbegin();
+
+								for (; MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend(); MachineLearningDataAtomIteratorCurrent++)
+								{
+									if (MachineLearningDataAtomIteratorCurrent->GetData() == std::string("[Result \"*\"]"))
+									{
+										break;
+									}
+								}
+
+								if (MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend())
+								{
+									std::string game_result = std::string("0-1");
+									std::string local_string = std::string("[Result \"") + game_result + std::string("\"]");
+									MachineLearningDataAtomIteratorCurrent->SetData(local_string);
+								}
+							}
 						}
 						else
 						{
 							if (us == BLACK)
 							{
 								std::cout << "Game over: white wins" << std::endl;
+
+								{
+									auto MachineLearningDataAtomIteratorCurrent = MachineLearningDataStore.rbegin();
+
+									for (; MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend(); MachineLearningDataAtomIteratorCurrent++)
+									{
+										if (MachineLearningDataAtomIteratorCurrent->GetData() == std::string("[Result \"*\"]"))
+										{
+											break;
+										}
+									}
+
+									if (MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend())
+									{
+										std::string game_result = std::string("1-0");
+										std::string local_string = std::string("[Result \"") + game_result + std::string("\"]");
+										MachineLearningDataAtomIteratorCurrent->SetData(local_string);
+									}
+								}
 							}
 							else
 							{
@@ -278,6 +347,25 @@ void MachineLearningControl::learning_thread_function()
 					else
 					{
 						std::cout << "Game over: draw" << std::endl;
+
+						{
+							auto MachineLearningDataAtomIteratorCurrent = MachineLearningDataStore.rbegin();
+
+							for (; MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend(); MachineLearningDataAtomIteratorCurrent++)
+							{
+								if (MachineLearningDataAtomIteratorCurrent->GetData() == std::string("[Result \"*\"]"))
+								{
+									break;
+								}
+							}
+
+							if (MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend())
+							{
+								std::string game_result = std::string("1/2-1/2");
+								std::string local_string = std::string("[Result \"") + game_result + std::string("\"]");
+								MachineLearningDataAtomIteratorCurrent->SetData(local_string);
+							}
+						}
 					}
 
 					continue;
@@ -412,21 +500,6 @@ void MachineLearningControl::learning_thread_function()
 				ClearData();
 			}
 
-
-			if (!learning_exit)
-			{
-				MachineLearningDataAtom MachineLearningDataAtomCurrent;
-
-				std::string local_string;
-
-				local_string = std::string("");
-				MachineLearningDataAtomCurrent.SetData(local_string);
-				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
-
-				local_string = std::string("");
-				MachineLearningDataAtomCurrent.SetData(local_string);
-				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
-			}
 
 			if (!learning_exit)
 			{
