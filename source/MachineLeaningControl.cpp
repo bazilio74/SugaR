@@ -4,6 +4,8 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <list>
+#include <unordered_set>
 
 #include "MachineLeaningControl.h"
 
@@ -16,6 +18,8 @@
 MachineLearningControl MachineLearningControlMain;
 void learning_go_call(Position& pos, std::istringstream& is, StateListPtr& states);
 void learning_position_call(Position& pos, std::istringstream& is, StateListPtr& states);
+void go(Position& pos, StateListPtr& states, Search::LimitsType limits, bool ponderMode);
+
 
 MachineLearningControl::MachineLearningControl()
 	:learning_in_progress(false), learning_move_returned(true), current_position_set(false), learning_round_finished(false), learning_exit(false),
@@ -134,7 +138,7 @@ void MachineLearningControl::ClearData()
 }
 
 
-void MachineLearningControl::StartLearning(Position &position_parameter, std::istringstream& is, StateListPtr& parameter_states)
+void MachineLearningControl::StartLearning(Position &position_parameter, std::istringstream& is, StateListPtr& parameter_states, const Search::LimitsType& limits, bool ponderMode)
 {
 	learning_in_progress = true;
 
@@ -143,6 +147,26 @@ void MachineLearningControl::StartLearning(Position &position_parameter, std::is
 	PrepareLearning(position_parameter, is, parameter_states);
 
 	current_position_set = true;
+
+	game_simulation_limits = limits;
+	game_simulation_ponderMode = ponderMode;
+
+	final_game_limits = limits;
+
+	int time_corrector = games_to_simulate * 2;
+	//	"games_to_simulate" is to time for each simulated games and "games_to_simulate" is to time for best moves from database
+
+	game_simulation_limits.time[0] /= time_corrector;
+	game_simulation_limits.time[1] /= time_corrector;
+	game_simulation_limits.inc[0] /= time_corrector;
+	game_simulation_limits.inc[1] /= time_corrector;
+	game_simulation_limits.movetime /= time_corrector;
+
+	final_game_limits.time[0] /= 2;
+	final_game_limits.time[1] /= 2;
+	final_game_limits.inc[0] /= 2;
+	final_game_limits.inc[1] /= 2;
+	final_game_limits.movetime /= 2;
 }
 
 
@@ -182,14 +206,12 @@ void MachineLearningControl::learning_thread_function()
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 
-		Options["Threads"] = 1;								//	for easier debuging
-		Options["Save Machine Learning File"] = true;		//	for easier debuging
+		//Options["Threads"] = 1;							//	for easier debuging
+		//Options["Save Machine Learning File"] = true;		//	for easier debuging
 
 		ClearData();
 
-		constexpr size_t game_to_simulate = 2;//100;
-
-		for (size_t game_number = 1; game_number<=game_to_simulate && !learning_exit; game_number++)
+		for (size_t game_number = 1; game_number <= games_to_simulate && !learning_exit; game_number++)
 		{
 			StateInfo st;
 			std::memset(&st, 0, sizeof(StateInfo));
@@ -254,7 +276,7 @@ void MachineLearningControl::learning_thread_function()
 
 				Color us = current_position.side_to_move();
 
-				if (current_position.is_draw(0))
+				if (current_position.is_draw(32))
 				{
 					LearningRoundFinished();
 
@@ -373,11 +395,7 @@ void MachineLearningControl::learning_thread_function()
 
 				if (!learning_exit)
 				{
-					std::string input_stream_data("go depth 4");
-					//std::string input_stream_data("go");
-					std::istringstream input_stream(input_stream_data);
-
-					learning_go_call(current_position, input_stream, *states);
+					go(current_position, *states, game_simulation_limits, game_simulation_ponderMode);
 				}
 
 
@@ -538,6 +556,253 @@ void MachineLearningControl::learning_thread_function()
 			std::istringstream input_stream(input_stream_data);
 
 			PrepareLearning(current_position, input_stream, *states);
+		}
+
+		if (!learning_exit)
+		{
+			std::string input_stream_data;
+
+			auto us = current_position.side_to_move();
+
+			if (LoadData() == 0)
+			{
+				int results_table[4];
+				memset(results_table, 0, 4 * sizeof(int));
+				
+				std::unordered_set<std::string> CurrentDataUsBestMoves;
+
+				std::list<std::string> CurrentDataMoves1;
+				std::list<std::string> CurrentDataMoves2;
+				std::list<std::string> CurrentDataMoves3;
+				std::list<std::string> CurrentDataMoves4;
+
+				std::string CurrentDataFen = std::string("[FEN \"") + fen_saved_main + std::string("\"]");
+				auto MachineLearningDataStoreIterator = MachineLearningDataStore.begin();
+				for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
+				{
+					for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
+					{
+						if (MachineLearningDataStoreIterator->GetData() == CurrentDataFen)
+						{
+							break;
+						}
+					}
+
+					if (MachineLearningDataStoreIterator != MachineLearningDataStore.end())
+					{
+						std::string CurrentDataResult1 = std::string("[Result \"*\"]");
+						std::string CurrentDataResult2 = std::string("[Result \"1/2-1/2\"]");
+						std::string CurrentDataResult3 = std::string("[Result \"1-0\"]");
+						std::string CurrentDataResult4 = std::string("[Result \"0-1\"]");
+
+						int local_current_result = 0;
+
+						for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
+						{
+							if (MachineLearningDataStoreIterator->GetData() == CurrentDataResult1)
+							{
+								MachineLearningDataStoreIterator++;
+								for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
+								{
+									if (MachineLearningDataStoreIterator->GetData() != std::string(""))
+									{
+										CurrentDataMoves1.push_back(MachineLearningDataStoreIterator->GetData());
+										break;
+									}
+								}
+
+								local_current_result = 1;
+								break;
+							}
+							else
+								if (MachineLearningDataStoreIterator->GetData() == CurrentDataResult2)
+								{
+									MachineLearningDataStoreIterator++;
+									for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
+									{
+										if (MachineLearningDataStoreIterator->GetData() != std::string(""))
+										{
+											CurrentDataMoves2.push_back(MachineLearningDataStoreIterator->GetData());
+											break;
+										}
+									}
+									local_current_result = 2;
+									break;
+								}
+								else
+									if (MachineLearningDataStoreIterator->GetData() == CurrentDataResult3)
+									{
+										MachineLearningDataStoreIterator++;
+										for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
+										{
+											if (MachineLearningDataStoreIterator->GetData() != std::string(""))
+											{
+												CurrentDataMoves3.push_back(MachineLearningDataStoreIterator->GetData());
+											}
+											else
+											{
+												break;
+											}
+										}
+										local_current_result = 3;
+										break;
+									}
+									else
+										if (MachineLearningDataStoreIterator->GetData() == CurrentDataResult4)
+										{
+											MachineLearningDataStoreIterator++;
+											for (; MachineLearningDataStoreIterator != MachineLearningDataStore.end(); MachineLearningDataStoreIterator++)
+											{
+												if (MachineLearningDataStoreIterator->GetData() != std::string(""))
+												{
+													CurrentDataMoves4.push_back(MachineLearningDataStoreIterator->GetData());
+													break;
+												}
+											}
+											local_current_result = 4;
+											break;
+										}
+						}
+
+						if (local_current_result == 0)
+						{
+							local_current_result = 1;
+						}
+
+						if (MachineLearningDataStoreIterator != MachineLearningDataStore.end())
+						{
+							results_table[local_current_result-1]++;
+						}
+						else
+						{
+							break;
+						}
+					}
+					else
+					{
+						break;
+					}
+				}
+
+				double games_number = results_table[1] + results_table[2] + results_table[1];
+				double white_score_part = 0.5*results_table[1] + results_table[2];
+				double black_score_part = 0.5*results_table[1] + results_table[3];
+				if (games_number != 0)
+				{
+					white_score_part /= games_number;		//	"white_score_part" is part of white scores
+					black_score_part /= games_number;		//	"black_score_part" is part of black scores
+				}
+
+				if (us == WHITE)
+				{
+					for (auto local_move : CurrentDataMoves3)
+					{
+						CurrentDataUsBestMoves.insert(local_move);
+					}
+					for (auto local_move : CurrentDataMoves2)
+					{
+						CurrentDataUsBestMoves.insert(local_move);
+					}
+					for (auto local_move : CurrentDataMoves4)
+					{
+						CurrentDataUsBestMoves.insert(local_move);
+					}
+				}
+				else
+				{
+					if (us = BLACK)
+					{
+						for (auto local_move : CurrentDataMoves4)
+						{
+							CurrentDataUsBestMoves.insert(local_move);
+						}
+						for (auto local_move : CurrentDataMoves2)
+						{
+							CurrentDataUsBestMoves.insert(local_move);
+						}
+						for (auto local_move : CurrentDataMoves3)
+						{
+							CurrentDataUsBestMoves.insert(local_move);
+						}
+					}
+					else
+					{
+						assert(false);
+					}
+				}
+
+				/*/
+				if (CurrentDataUsBestMoves.size() > 0)
+				{
+					std::string local_string("searchmoves ");
+
+					for (auto current_best_move : CurrentDataUsBestMoves)
+					{
+						local_string += current_best_move;
+						local_string += std::string(" ");
+					}
+
+					input_stream_data += local_string;
+				}
+				else
+				{
+					std::string local_string("searchmoves ");
+
+					auto moveList = MoveList<LEGAL>(current_position);
+
+					for (auto current_best_move_from_list : moveList)
+					{
+						local_string += UCI::move(current_best_move_from_list, is_960);
+						local_string += std::string(" ");
+					}
+
+					input_stream_data += local_string;
+				}
+				/*/
+
+				ClearData();
+			}
+			{
+				if (final_game_limits.time[0] != 0)// && us == WHITE)
+				{
+					char local_string[data_atom_maximum_size];
+					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
+					sprintf_s(local_string, data_atom_maximum_size, "wtime %d ", final_game_limits.time[0]);
+					input_stream_data += std::string(local_string);
+				}
+				if (final_game_limits.time[1] != 0)// && us == BLACK)
+				{
+					char local_string[data_atom_maximum_size];
+					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
+					sprintf_s(local_string, data_atom_maximum_size, "btime %d ", final_game_limits.time[1]);
+					input_stream_data += std::string(local_string);
+				}
+				if (final_game_limits.inc[0] != 0)// && us == WHITE)
+				{
+					char local_string[data_atom_maximum_size];
+					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
+					sprintf_s(local_string, data_atom_maximum_size, "winc %d ", final_game_limits.inc[0]);
+					input_stream_data += std::string(local_string);
+				}
+				if (final_game_limits.inc[1] != 0)// && us == BLACK)
+				{
+					char local_string[data_atom_maximum_size];
+					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
+					sprintf_s(local_string, data_atom_maximum_size, "binc %d ", final_game_limits.inc[1]);
+					input_stream_data += std::string(local_string);
+				}
+				if (final_game_limits.movetime != 0)
+				{
+					char local_string[data_atom_maximum_size];
+					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
+					sprintf_s(local_string, data_atom_maximum_size, "movetime %d ", final_game_limits.movetime);
+					input_stream_data += std::string(local_string);
+				}
+			}
+
+			std::istringstream input_stream(input_stream_data);
+
+			learning_go_call(current_position, input_stream, *states);
 		}
 
 		current_position_set = false;

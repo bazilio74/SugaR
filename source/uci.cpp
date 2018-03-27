@@ -34,9 +34,12 @@
 #include "syzygy/tbprobe.h"
 
 #include "MachineLeaningControl.h"
-void learning(Position& pos, std::istringstream& is, StateListPtr& states);
+
+void learning(Position& pos, StateListPtr& states, const Search::LimitsType& limits, bool ponderMode, std::istringstream& is);
 void position_make_move(Position& pos, std::istringstream& is, StateListPtr& states);
 void learning_position_call(Position& pos, std::istringstream& is, StateListPtr& states);
+void go_stub(Position& pos, std::istringstream& is, StateListPtr& states);
+void prepare_position(std::string parameter_fen, Position &position_parameter, StateListPtr& parameter_states);
 
 using namespace std;
 
@@ -204,9 +207,8 @@ void UCI::loop(int argc, char* argv[]) {
 
 	Position learning_pos;
 	StateListPtr learning_states(new std::deque<StateInfo>(1));
-	auto learning_Thread = std::make_shared<Thread>(0);
 
-	learning_pos.set(StartFEN, false, &learning_states->back(), learning_Thread.get());
+	learning_pos.set(StartFEN, false, &learning_states->back(), uiThread.get());
 
 	std::string learning_position_fen = learning_pos.fen();
 
@@ -256,6 +258,14 @@ void UCI::loop(int argc, char* argv[]) {
 
 				Threads.main()->wait_for_search_finished();
 
+				StateListPtr state_list_ptr;
+
+				prepare_position(position_fen, pos, state_list_ptr);
+
+				StateListPtr learning_state_list_ptr;
+
+				prepare_position(learning_position_fen, learning_pos, learning_state_list_ptr);
+
 				{
 					std::string input_stream_data("startpos");
 					std::istringstream input_stream(input_stream_data);
@@ -288,7 +298,7 @@ void UCI::loop(int argc, char* argv[]) {
 				Threads.stop = true;
 				Threads.main()->wait_for_search_finished();
 			}
-			go(pos, is, states);
+			go_stub(pos, is, states);
 		}
 		else if (token == "position")
 		{
@@ -302,9 +312,123 @@ void UCI::loop(int argc, char* argv[]) {
 		else if (token == "isready")    sync_cout << "readyok" << sync_endl;
 
 		// Additional custom non-UCI commands, mainly for debugging
-		else if (token == "flip")  pos.flip();
-		else if (token == "bench") bench(pos, is, states);
-		else if (token == "d")     sync_cout << pos << sync_endl;
+		else if (token == "flip")
+		{
+			StateListPtr state_list_ptr;
+
+			prepare_position(position_fen, pos, state_list_ptr);
+
+			StateListPtr learning_state_list_ptr;
+
+			prepare_position(learning_position_fen, learning_pos, learning_state_list_ptr);
+
+			{
+				std::string input_stream_data("startpos");
+				std::istringstream input_stream(input_stream_data);
+				position(pos, input_stream, states);
+			}
+
+			{
+				std::string input_stream_data("fen ");
+				input_stream_data += position_fen;
+				std::istringstream input_stream(input_stream_data);
+				position(pos, input_stream, states);
+			}
+
+			{
+				std::string input_stream_data("startpos");
+				std::istringstream input_stream(input_stream_data);
+
+				position(learning_pos, input_stream, states);
+			}
+
+			{
+				std::string input_stream_data("fen ");
+				input_stream_data += learning_position_fen;
+				std::istringstream input_stream(input_stream_data);
+				position(learning_pos, input_stream, states);
+			}
+
+			pos.flip();
+		}
+		else if (token == "bench")
+		{
+			StateListPtr state_list_ptr;
+
+			prepare_position(position_fen, pos, state_list_ptr);
+
+			StateListPtr learning_state_list_ptr;
+
+			prepare_position(learning_position_fen, learning_pos, learning_state_list_ptr);
+
+			{
+				std::string input_stream_data("startpos");
+				std::istringstream input_stream(input_stream_data);
+				position(pos, input_stream, states);
+			}
+
+			{
+				std::string input_stream_data("fen ");
+				input_stream_data += position_fen;
+				std::istringstream input_stream(input_stream_data);
+				position(pos, input_stream, states);
+			}
+
+			{
+				std::string input_stream_data("startpos");
+				std::istringstream input_stream(input_stream_data);
+
+				position(learning_pos, input_stream, states);
+			}
+
+			{
+				std::string input_stream_data("fen ");
+				input_stream_data += learning_position_fen;
+				std::istringstream input_stream(input_stream_data);
+				position(learning_pos, input_stream, states);
+			}
+
+			bench(pos, is, states);
+		}
+		else if (token == "d")
+		{
+			StateListPtr state_list_ptr;
+
+			prepare_position(position_fen, pos, state_list_ptr);
+
+			StateListPtr learning_state_list_ptr;
+
+			prepare_position(learning_position_fen, learning_pos, learning_state_list_ptr);
+
+			{
+				std::string input_stream_data("startpos");
+				std::istringstream input_stream(input_stream_data);
+				position(pos, input_stream, states);
+			}
+
+			{
+				std::string input_stream_data("fen ");
+				input_stream_data += position_fen;
+				std::istringstream input_stream(input_stream_data);
+				position(pos, input_stream, states);
+			}
+
+			{
+				std::string input_stream_data("startpos");
+				std::istringstream input_stream(input_stream_data);
+
+				position(learning_pos, input_stream, states);
+			}
+
+			{
+				std::string input_stream_data("fen ");
+				input_stream_data += learning_position_fen;
+				std::istringstream input_stream(input_stream_data);
+				position(learning_pos, input_stream, states);
+			}
+
+			sync_cout << pos << sync_endl;
+		}
 		else if (token == "eval")  sync_cout << Eval::trace(pos) << sync_endl;
 		else if (token == "move")
 		{
@@ -319,6 +443,14 @@ void UCI::loop(int argc, char* argv[]) {
 			Threads.stop = true;
 
 			Threads.main()->wait_for_search_finished();
+
+			StateListPtr state_list_ptr;
+
+			prepare_position(position_fen, pos, state_list_ptr);
+
+			StateListPtr learning_state_list_ptr;
+
+			prepare_position(learning_position_fen, learning_pos, learning_state_list_ptr);
 			
 			{
 				std::string input_stream_data("startpos");
@@ -347,8 +479,10 @@ void UCI::loop(int argc, char* argv[]) {
 				position(learning_pos, input_stream, states);
 			}
 
+			Search::LimitsType search_limits = Search::Limits;
+
 			MachineLearningControlMain.PrepareLearning(learning_pos, learning_is, learning_states);
-			learning(learning_pos, learning_is, learning_states);
+			learning(learning_pos, learning_states, search_limits, false, learning_is);
 		}
 		else
 			sync_cout << "Unknown command: " << cmd << sync_endl;
@@ -359,6 +493,15 @@ void UCI::loop(int argc, char* argv[]) {
 
 			MachineLearningControlMain.LearningExit();
 			
+			Threads.main()->wait_for_search_finished();
+		}
+
+		if (token == "stop")
+		{
+			Threads.stop = true;
+
+			MachineLearningControlMain.EndLearning();
+
 			Threads.main()->wait_for_search_finished();
 		}
 
@@ -439,7 +582,7 @@ Move UCI::to_move(const Position& pos, string& str) {
 }
 
 
-void learning(Position& pos, std::istringstream& is, StateListPtr& states)
+void learning(Position& pos, StateListPtr& states, const Search::LimitsType& limits, bool ponderMode, std::istringstream& is)
 {
 	string token;
 
@@ -447,7 +590,7 @@ void learning(Position& pos, std::istringstream& is, StateListPtr& states)
 	{
 		if (token == "start")
 		{
-			MachineLearningControlMain.StartLearning(pos, is, states);
+			MachineLearningControlMain.StartLearning(pos, is, states, limits, ponderMode);
 		}
 		else if (token == "end")
 		{
@@ -626,4 +769,52 @@ void position_make_move(Position& current_position, std::istringstream& is, Stat
 			learning_position_call(current_position, input_stream, states);
 		}
 	}
+}
+
+void go_stub(Position& pos, istringstream& is, StateListPtr& states) {
+
+	Search::LimitsType limits;
+	string token;
+	bool ponderMode = false;
+
+	limits.startTime = now(); // As early as possible!
+
+	while (is >> token)
+		if (token == "searchmoves")
+			while (is >> token)
+				limits.searchmoves.push_back(UCI::to_move(pos, token));
+
+		else if (token == "wtime")     is >> limits.time[WHITE];
+		else if (token == "btime")     is >> limits.time[BLACK];
+		else if (token == "winc")      is >> limits.inc[WHITE];
+		else if (token == "binc")      is >> limits.inc[BLACK];
+		else if (token == "movestogo") is >> limits.movestogo;
+		else if (token == "depth")     is >> limits.depth;
+		else if (token == "nodes")     is >> limits.nodes;
+		else if (token == "movetime")  is >> limits.movetime;
+		else if (token == "mate")      is >> limits.mate;
+		else if (token == "perft")     is >> limits.perft;
+		else if (token == "infinite")  limits.infinite = 1;
+		else if (token == "ponder")    ponderMode = true;
+
+		{
+			std::string input_stream_data("start");
+			std::istringstream input_stream(input_stream_data);
+
+			//MachineLearningControlMain.PrepareLearning(pos, input_stream, states);
+			learning(pos, states, limits, ponderMode, input_stream);
+		}
+}
+
+void go(Position& pos, StateListPtr& states, Search::LimitsType limits, bool ponderMode)
+{
+	Threads.start_thinking(pos, states, limits, ponderMode);
+}
+
+void prepare_position(std::string parameter_fen, Position &position_parameter, StateListPtr& parameter_states)
+{
+	parameter_states = StateListPtr(new std::deque<StateInfo>(1)); // Drop old and create a new one
+
+	position_parameter.init();
+	position_parameter.set(parameter_fen, Options["UCI_Chess960"], &parameter_states->front(), Threads.main());
 }

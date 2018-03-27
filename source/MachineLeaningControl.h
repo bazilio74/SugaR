@@ -13,6 +13,7 @@
 #include "MachineLearningData.h"
 
 #include "position.h"
+#include "search.h"
 
 class MachineLearningControl
 {
@@ -33,6 +34,10 @@ protected:
 	bool current_position_set;
 
 	std::string fen_saved_main;
+	Search::LimitsType game_simulation_limits;
+	bool game_simulation_ponderMode;
+
+	Search::LimitsType final_game_limits;
 
 	typedef std::list<MachineLearningDataAtom> MachineLearningDataList;
 	typedef std::list<MachineLearningDataAtom>::iterator MachineLearningDataListIterator;
@@ -42,6 +47,8 @@ protected:
 public:
 	MachineLearningControl();
 	~MachineLearningControl();
+
+	static const size_t games_to_simulate = 2;
 
 	void SetFileName(std::string parameter_file_name);
 
@@ -56,7 +63,7 @@ public:
 
 	void ClearData();
 
-	void StartLearning(Position &position_parameter, std::istringstream& is, StateListPtr& parameter_states);
+	void StartLearning(Position &position_parameter, std::istringstream& is, StateListPtr& parameter_states, const Search::LimitsType& limits, bool ponderMode);
 	void EndLearning();
 	void LearningRoundFinished();
 	bool IsLearningInProgress();
