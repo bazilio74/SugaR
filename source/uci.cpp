@@ -208,7 +208,7 @@ void UCI::loop(int argc, char* argv[]) {
 
 	learning_pos.set(StartFEN, false, &learning_states->back(), learning_Thread.get());
 
-	std:string learning_position_fen = learning_pos.fen();
+	std::string learning_position_fen = learning_pos.fen();
 
 	for (int i = 1; i < argc; ++i)
 		cmd += std::string(argv[i]) + " ";
