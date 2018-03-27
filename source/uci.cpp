@@ -212,8 +212,10 @@ void UCI::loop(int argc, char* argv[]) {
 
 	std::string learning_position_fen = learning_pos.fen();
 
-	std::string position_string;
-	std::string position_learning_string;
+	std::string position_string_default(" startpos moves ");
+
+	std::string position_string(position_string_default);
+	std::string position_learning_string(position_string_default);
 
 	for (int i = 1; i < argc; ++i)
 		cmd += std::string(argv[i]) + " ";
@@ -375,9 +377,6 @@ void UCI::loop(int argc, char* argv[]) {
 		else if (token == "eval")  sync_cout << Eval::trace(pos) << sync_endl;
 		else if (token == "move")
 		{
-			position_make_move(pos, position_string, is,  states);
-			position_make_move(learning_pos, position_learning_string, learning_is, learning_states);
-
 			StateListPtr state_list_ptr;
 
 			prepare_position(position_fen, pos, state_list_ptr);
@@ -385,6 +384,9 @@ void UCI::loop(int argc, char* argv[]) {
 			StateListPtr learning_state_list_ptr;
 
 			prepare_position(learning_position_fen, learning_pos, learning_state_list_ptr);
+
+			position_make_move(pos, position_string, is, states);
+			position_make_move(learning_pos, position_learning_string, learning_is, learning_states);
 
 			std::istringstream position_string_is(position_string);
 			std::istringstream position_learning_string_is(position_learning_string);
@@ -560,36 +562,6 @@ void learning_position_call(Position& pos, std::istringstream& is, StateListPtr&
 void position_make_move(Position& current_position, std::string &parameter_string, std::istringstream& is, StateListPtr& states)
 {
 	Color us = current_position.side_to_move();
-
-	auto moveList = MoveList<LEGAL>(current_position);
-
-	if (moveList.size() == 0)
-	{
-		if (current_position.checkers())
-		{
-			if (us == WHITE)
-			{
-				std::cout << "Game over: black wins" << std::endl;
-			}
-			else
-			{
-				if (us == BLACK)
-				{
-					std::cout << "Game over: white wins" << std::endl;
-				}
-				else
-				{
-					assert(false);
-				}
-			}
-		}
-		else
-		{
-			std::cout << "Game over: draw" << std::endl;
-		}
-
-		return;
-	}
 
 	std::string token;
 
