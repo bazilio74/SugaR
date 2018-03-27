@@ -596,6 +596,11 @@ void go_stub(Position& pos, istringstream& is, StateListPtr& states) {
 		else if (token == "infinite")  limits.infinite = 1;
 		else if (token == "ponder")    ponderMode = true;
 
+		if (token == "infinite")
+		{
+			Threads.start_thinking(pos, states, limits, ponderMode);
+		}
+		else
 		{
 			std::string input_stream_data("start");
 			std::istringstream input_stream(input_stream_data);

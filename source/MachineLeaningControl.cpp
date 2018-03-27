@@ -24,7 +24,7 @@ void go(Position& pos, StateListPtr& states, Search::LimitsType limits, bool pon
 
 MachineLearningControl::MachineLearningControl()
 	:learning_in_progress(false), learning_move_returned(true), current_position_set(false), learning_round_finished(false), learning_exit(false),
-	is_960(false), 
+	is_960(false), simulating_in_progress(false),
 	states(NULL), learning_thread(&MachineLearningControl::learning_thread_function, this)
 {
 }
@@ -211,6 +211,8 @@ void MachineLearningControl::learning_thread_function()
 		//Options["Save Machine Learning File"] = true;		//	for easier debuging
 
 		ClearData();
+
+		simulating_in_progress = true;
 
 		for (size_t game_number = 1; game_number <= games_to_simulate && !learning_exit; game_number++)
 		{
@@ -816,6 +818,8 @@ void MachineLearningControl::learning_thread_function()
 				}
 			}
 
+			simulating_in_progress = false;
+
 			std::istringstream input_stream(input_stream_data);
 
 			learning_go_call(current_position, input_stream, *states);
@@ -874,4 +878,9 @@ void MachineLearningControl::PrepareLearning(Position &position_parameter, std::
 bool MachineLearningControl::IsLearningInProgress()
 {
 	return learning_in_progress;
+}
+
+bool MachineLearningControl::IsSimulatingInProgress()
+{
+	return simulating_in_progress;
 }

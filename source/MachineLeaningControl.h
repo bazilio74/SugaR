@@ -22,6 +22,7 @@ protected:
 	bool learning_move_returned;
 	bool learning_exit;
 	bool learning_round_finished;
+	bool simulating_in_progress;
 
 	std::thread learning_thread;
 
@@ -46,7 +47,7 @@ public:
 	MachineLearningControl();
 	~MachineLearningControl();
 
-	static const size_t games_to_simulate = 2;
+	static const size_t games_to_simulate = 10;
 
 	void SetFileName(std::string parameter_file_name);
 
@@ -65,6 +66,7 @@ public:
 	void EndLearning();
 	void LearningRoundFinished();
 	bool IsLearningInProgress();
+	bool IsSimulatingInProgress();
 	void PrepareLearning(Position &position_parameter, std::istringstream& is, StateListPtr& parameter_states);
 
 	void LearningExit();
