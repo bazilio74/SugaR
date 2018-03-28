@@ -29,7 +29,7 @@ inline void sleep_1_milli_second()
 
 MachineLearningControl::MachineLearningControl()
 	:learning_in_progress(false), learning_move_returned(true), current_position_set(false), learning_round_finished(false), learning_exit(false),
-	is_960(false), simulating_in_progress(false),
+	is_960(false), simulating_in_progress(false), first_game_move_answer(true),
 	states(NULL), learning_thread(&MachineLearningControl::learning_thread_function, this)
 {
 }
@@ -50,42 +50,48 @@ void MachineLearningControl::SetFileName(std::string parameter_file_name)
 
 //	0 - success
 //	1 - fail
+//	2 - not required
 int MachineLearningControl::LoadData()
 {
-	std::ifstream input_stream;
-	
-	input_stream.open(file_name);
-
-	if (input_stream.is_open())
+	if (Options["Save Machine Learning File"])
 	{
-		if (!input_stream.eof())
+		std::ifstream input_stream;
+
+		input_stream.open(file_name);
+
+		if (input_stream.is_open())
 		{
-			do
+			if (!input_stream.eof())
 			{
-				MachineLearningDataAtom MachineLearningDataAtomCurrent;
+				do
+				{
+					MachineLearningDataAtom MachineLearningDataAtomCurrent;
 
-				input_stream >> MachineLearningDataAtomCurrent;
+					input_stream >> MachineLearningDataAtomCurrent;
 
-				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
+					MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
 
-			} while (!input_stream.eof());
+				} while (!input_stream.eof());
+			}
+			else
+			{
+				return 1;
+			}
+
+			if (MachineLearningDataStore.size() > 0)
+			{
+				MachineLearningDataStore.pop_back();
+			}
 		}
 		else
 		{
 			return 1;
 		}
 
-		if (MachineLearningDataStore.size() > 0)
-		{
-			MachineLearningDataStore.pop_back();
-		}
-	}
-	else
-	{
-		return 1;
+		return 0;
 	}
 
-	return 0;
+	return 2;
 }
 
 
@@ -144,7 +150,7 @@ void MachineLearningControl::ClearData()
 }
 
 
-void MachineLearningControl::StartLearning(Position &position_parameter, std::istringstream& is, StateListPtr& parameter_states, const Search::LimitsType& limits, bool ponderMode)
+void MachineLearningControl::StartLearning(Position &position_parameter, std::string position_string, std::istringstream& is, StateListPtr& parameter_states, const Search::LimitsType& limits, bool ponderMode)
 {
 	learning_in_progress = true;
 
@@ -152,18 +158,22 @@ void MachineLearningControl::StartLearning(Position &position_parameter, std::is
 
 	PrepareLearning(position_parameter, is, parameter_states);
 
-	current_position_set = true;
+	position_saved_main = position_string;
 
 	game_simulation_limits = limits;
 	game_simulation_ponderMode = ponderMode;
 
 	final_game_limits = limits;
 
-	double alpha = 6.0;
-	double beta = 4.0;
+	double alpha = 1.0;
+	double beta = 1.0;
 
-	double time_corrector_1 = (beta) / (alpha + beta)/ games_to_simulate;
-	double time_corrector_2 = (alpha) / (alpha+beta);
+	double gamma = 0.40;	//	safety factor
+
+	double moves_per_game = 240;
+
+	double time_corrector_1 = (alpha) / (alpha + beta)/ double(games_to_simulate) * gamma / moves_per_game;
+	double time_corrector_2 = (beta) / (alpha + beta) * gamma / moves_per_game;
 	//	"time_corrector_1" is time part for each simulated games and "time_corrector_2" is time part for best moves from database
 
 	game_simulation_limits.time[0]		=	int(time_corrector_1 * game_simulation_limits.time[0]);
@@ -177,6 +187,8 @@ void MachineLearningControl::StartLearning(Position &position_parameter, std::is
 	final_game_limits.inc[0]			=	int(time_corrector_2 * final_game_limits.inc[0]);
 	final_game_limits.inc[1]			=	int(time_corrector_2 * final_game_limits.inc[1]);
 	final_game_limits.movetime			=	int(time_corrector_2 * final_game_limits.movetime);
+
+	current_position_set = true;
 }
 
 
@@ -201,7 +213,10 @@ void MachineLearningControl::Answer(Move parameter_Move, bool parameter_960)
 
 		MachineLearningDataAtomCurrent.SetData(parameter_answer);
 
-		MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
+		if (first_game_move_answer)
+		{
+			MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
+		}
 
 		learning_move_returned = true;
 	}
@@ -219,7 +234,7 @@ void MachineLearningControl::learning_thread_function()
 		//Options["Threads"] = 1;							//	for easier debuging
 		//Options["Save Machine Learning File"] = true;		//	for easier debuging
 
-		ClearData();
+		//ClearData();
 
 		simulating_in_progress = true;
 
@@ -231,6 +246,7 @@ void MachineLearningControl::learning_thread_function()
 			learning_round_finished = false;
 
 			std::string fen_saved = fen_saved_main;
+			std::string position_saved = position_saved_main;
 
 			{
 				MachineLearningDataAtom MachineLearningDataAtomCurrent;
@@ -266,6 +282,8 @@ void MachineLearningControl::learning_thread_function()
 				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
 			}
 
+			first_game_move_answer = true;
+
 			while (learning_in_progress && !learning_round_finished && !learning_exit)
 			{
 				learning_move_returned = false;
@@ -276,9 +294,17 @@ void MachineLearningControl::learning_thread_function()
 
 				limits.startTime = now();
 
+				/*/
 				{
 					std::string input_stream_data("fen ");
 					input_stream_data += fen_saved;
+					std::istringstream input_stream(input_stream_data);
+
+					learning_position_call(current_position, input_stream, *states);
+				}
+				/*/
+				{
+					std::string input_stream_data(position_saved);
 					std::istringstream input_stream(input_stream_data);
 
 					learning_position_call(current_position, input_stream, *states);
@@ -419,6 +445,8 @@ void MachineLearningControl::learning_thread_function()
 					std::this_thread::sleep_for(std::chrono::milliseconds(1));
 				}
 
+				first_game_move_answer = false;
+
 				if (!is_ok(Last_Move) && !learning_exit)
 				{
 					LearningRoundFinished();
@@ -433,6 +461,8 @@ void MachineLearningControl::learning_thread_function()
 					current_position.do_move(Last_Move, st);
 
 					fen_saved = current_position.fen();
+
+					position_saved = position_saved + std::string(" ") + UCI::move(Last_Move, is_960);
 
 					if (!current_position.pos_is_ok() && !learning_exit)
 					{
@@ -530,7 +560,10 @@ void MachineLearningControl::learning_thread_function()
 			}
 			else
 			{
-				ClearData();
+				if (SaveData() == 0)
+				{
+					ClearData();
+				}
 			}
 
 
@@ -579,7 +612,7 @@ void MachineLearningControl::learning_thread_function()
 
 			auto us = current_position.side_to_move();
 
-			if (LoadData() == 0)
+			if (LoadData() != 1)
 			{
 				int results_table[4];
 				memset(results_table, 0, 4 * sizeof(int));
@@ -706,7 +739,7 @@ void MachineLearningControl::learning_thread_function()
 					}
 				}
 
-				double games_number = results_table[1] + results_table[2] + results_table[1];
+				double games_number = results_table[1] + results_table[2] + results_table[3];
 				double white_score_part = 0.5*results_table[1] + results_table[2];
 				double black_score_part = 0.5*results_table[1] + results_table[3];
 				if (games_number != 0)
@@ -782,7 +815,7 @@ void MachineLearningControl::learning_thread_function()
 				}
 				///*/
 
-				ClearData();
+				//ClearData();
 			}
 			{
 				std::string input_stream_data_best_moves;

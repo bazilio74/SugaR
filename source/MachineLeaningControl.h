@@ -23,6 +23,7 @@ protected:
 	bool learning_exit;
 	bool learning_round_finished;
 	bool simulating_in_progress;
+	bool first_game_move_answer;
 
 	std::thread learning_thread;
 
@@ -33,6 +34,7 @@ protected:
 	bool current_position_set;
 
 	std::string fen_saved_main;
+	std::string position_saved_main;
 	Search::LimitsType game_simulation_limits;
 	bool game_simulation_ponderMode;
 
@@ -47,12 +49,13 @@ public:
 	MachineLearningControl();
 	~MachineLearningControl();
 
-	static const size_t games_to_simulate = 10;
+	static const size_t games_to_simulate = 50;
 
 	void SetFileName(std::string parameter_file_name);
 
 	//	0 - success
 	//	1 - fail
+	//	2 - not required
 	int LoadData();
 
 	//	0 - success
@@ -62,7 +65,7 @@ public:
 
 	void ClearData();
 
-	void StartLearning(Position &position_parameter, std::istringstream& is, StateListPtr& parameter_states, const Search::LimitsType& limits, bool ponderMode);
+	void StartLearning(Position &position_parameter, std::string position_string, std::istringstream& is, StateListPtr& parameter_states, const Search::LimitsType& limits, bool ponderMode);
 	void EndLearning();
 	void LearningRoundFinished();
 	bool IsLearningInProgress();

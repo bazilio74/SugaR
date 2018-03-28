@@ -35,10 +35,10 @@
 
 #include "MachineLeaningControl.h"
 
-void learning(Position& pos, StateListPtr& states, const Search::LimitsType& limits, bool ponderMode, std::istringstream& is);
+void learning(Position& pos, std::string position_string, StateListPtr& states, const Search::LimitsType& limits, bool ponderMode, std::istringstream& is);
 void position_make_move(Position& pos, std::string& parameter_string, std::istringstream& is, StateListPtr& states);
 void learning_position_call(Position& pos, std::istringstream& is, StateListPtr& states);
-void go_stub(Position& pos, std::istringstream& is, StateListPtr& states);
+void go_stub(Position& pos, std::string position_string, std::istringstream& is, StateListPtr& states);
 void prepare_position(std::string parameter_fen, Position &position_parameter, StateListPtr& parameter_states);
 
 using namespace std;
@@ -298,7 +298,7 @@ void UCI::loop(int argc, char* argv[]) {
 				position(pos, position_string_is, states);
 				position(learning_pos, position_learning_string_is, learning_states);
 			}
-			go_stub(pos, is, states);
+			go_stub(pos, position_string, is, states);
 		}
 		else if (token == "position")
 		{
@@ -420,7 +420,7 @@ void UCI::loop(int argc, char* argv[]) {
 			Search::LimitsType search_limits = Search::Limits;
 
 			MachineLearningControlMain.PrepareLearning(learning_pos, learning_is, learning_states);
-			learning(learning_pos, learning_states, search_limits, false, learning_is);
+			learning(learning_pos, position_learning_string, learning_states, search_limits, false, learning_is);
 		}
 		else
 			sync_cout << "Unknown command: " << cmd << sync_endl;
@@ -520,7 +520,7 @@ Move UCI::to_move(const Position& pos, string& str) {
 }
 
 
-void learning(Position& pos, StateListPtr& states, const Search::LimitsType& limits, bool ponderMode, std::istringstream& is)
+void learning(Position& pos, std::string position_string, StateListPtr& states, const Search::LimitsType& limits, bool ponderMode, std::istringstream& is)
 {
 	string token;
 
@@ -528,7 +528,7 @@ void learning(Position& pos, StateListPtr& states, const Search::LimitsType& lim
 	{
 		if (token == "start")
 		{
-			MachineLearningControlMain.StartLearning(pos, is, states, limits, ponderMode);
+			MachineLearningControlMain.StartLearning(pos, position_string, is, states, limits, ponderMode);
 		}
 		else if (token == "end")
 		{
@@ -570,7 +570,7 @@ void position_make_move(Position& current_position, std::string &parameter_strin
 	parameter_string += " " + token;
 }
 
-void go_stub(Position& pos, istringstream& is, StateListPtr& states) {
+void go_stub(Position& pos, std::string position_string, istringstream& is, StateListPtr& states) {
 
 	Search::LimitsType limits;
 	string token;
@@ -605,8 +605,7 @@ void go_stub(Position& pos, istringstream& is, StateListPtr& states) {
 			std::string input_stream_data("start");
 			std::istringstream input_stream(input_stream_data);
 
-			//MachineLearningControlMain.PrepareLearning(pos, input_stream, states);
-			learning(pos, states, limits, ponderMode, input_stream);
+			learning(pos, position_string, states, limits, ponderMode, input_stream);
 		}
 }
 
