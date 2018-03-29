@@ -637,10 +637,18 @@ void go_stub(Position& pos, std::string position_string, istringstream& is, Stat
 		}
 		else
 		{
-			std::string input_stream_data("start");
-			std::istringstream input_stream(input_stream_data);
+			if (true)
+			{
+				Threads.start_thinking(pos, states, limits, ponderMode);
+			}
+			else
+			{
+				//	Own realization of play using machine learning is not ready yet
+				std::string input_stream_data("start");
+				std::istringstream input_stream(input_stream_data);
 
-			learning(pos, position_string, states, limits, ponderMode, input_stream);
+				learning(pos, position_string, states, limits, ponderMode, input_stream);
+			}
 		}
 }
 
