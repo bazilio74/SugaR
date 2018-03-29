@@ -29,8 +29,13 @@ inline void sleep_1_milli_second()
 
 MachineLearningControl::MachineLearningControl()
 	:learning_in_progress(false), learning_move_returned(true), current_position_set(false), learning_round_finished(false), learning_exit(false),
-	is_960(false), simulating_in_progress(false), first_game_move_answer(true),
-	states(NULL), learning_thread(&MachineLearningControl::learning_thread_function, this)
+	is_960(false), simulating_in_progress(false), first_game_move_answer(true), infinite_learning_exit(false),
+	states(NULL),
+	learning_thread(&MachineLearningControl::learning_thread_function, this),
+	infinite_learning_thread(&MachineLearningControl::infinite_learning_thread_function, this),
+	infinite_states(NULL),
+	infinite_start(false)
+
 {
 }
 
@@ -39,7 +44,11 @@ MachineLearningControl::~MachineLearningControl()
 {
 	learning_exit = true;
 
+	infinite_learning_exit = true;
+
 	learning_thread.join();
+
+	infinite_learning_thread.join();
 }
 
 void MachineLearningControl::SetFileName(std::string parameter_file_name)
@@ -149,6 +158,18 @@ void MachineLearningControl::ClearData()
 	MachineLearningDataStore.clear();
 }
 
+void MachineLearningControl::StartInfiniteLearning(Position &position_parameter, std::string position_string, std::istringstream& is, StateListPtr& parameter_states, const Search::LimitsType& limits, bool ponderMode)
+{
+	infinite_stop = false;
+
+	PrepareInfiniteLearning(position_parameter, is, parameter_states);
+
+	position_infinite_string = position_string;
+	current_limit = limits;
+	ponder_mode_infinite = ponderMode;
+
+	infinite_start = true;
+}
 
 void MachineLearningControl::StartLearning(Position &position_parameter, std::string position_string, std::istringstream& is, StateListPtr& parameter_states, const Search::LimitsType& limits, bool ponderMode)
 {
@@ -168,12 +189,14 @@ void MachineLearningControl::StartLearning(Position &position_parameter, std::st
 	double alpha = 1.0;
 	double beta = 1.0;
 
-	double gamma = 0.40;	//	safety factor
+	double data_processing_time_part = 0.0;
 
-	double moves_per_game = 240;
+	double gamma = 0.50 * (1.0 - data_processing_time_part);
 
-	double time_corrector_1 = (alpha) / (alpha + beta)/ double(games_to_simulate) * gamma / moves_per_game;
-	double time_corrector_2 = (beta) / (alpha + beta) * gamma / moves_per_game;
+	double half_moves_per_game = 240.0;
+
+	double time_corrector_1 = (alpha) / (alpha + beta)/ double(games_to_simulate) * gamma;
+	double time_corrector_2 = (beta) / (alpha + beta) * gamma;
 	//	"time_corrector_1" is time part for each simulated games and "time_corrector_2" is time part for best moves from database
 
 	game_simulation_limits.time[0]		=	int(time_corrector_1 * game_simulation_limits.time[0]);
@@ -284,6 +307,8 @@ void MachineLearningControl::learning_thread_function()
 
 			first_game_move_answer = true;
 
+			Search::LimitsType current_game_simulation_limits = game_simulation_limits;
+
 			while (learning_in_progress && !learning_round_finished && !learning_exit)
 			{
 				learning_move_returned = false;
@@ -317,7 +342,7 @@ void MachineLearningControl::learning_thread_function()
 
 				Color us = current_position.side_to_move();
 
-				if (current_position.is_draw(32))
+				if (current_position.is_draw(64))
 				{
 					LearningRoundFinished();
 
@@ -433,10 +458,9 @@ void MachineLearningControl::learning_thread_function()
 
 					continue;
 				}
-
 				if (!learning_exit)
 				{
-					go(current_position, *states, game_simulation_limits, game_simulation_ponderMode);
+					go(current_position, *states, current_game_simulation_limits, game_simulation_ponderMode);
 				}
 
 
@@ -552,6 +576,8 @@ void MachineLearningControl::learning_thread_function()
 				{
 					std::cout << "Game over" << std::endl;
 				}
+
+				current_game_simulation_limits.time[us] -= int(now() - limits.startTime);
 			}
 
 			if (SaveData() == 1)
@@ -924,6 +950,42 @@ void MachineLearningControl::PrepareLearning(Position &position_parameter, std::
 	fen_saved_main = current_position.fen();
 }
 
+void MachineLearningControl::PrepareInfiniteLearning(Position &position_parameter, std::istringstream& is, StateListPtr& parameter_states)
+{
+	infinite_states = &parameter_states;
+
+	if (infinite_states != NULL)
+	{
+		if (infinite_states->get() != NULL)
+		{
+			if (infinite_states->get()->size() == 0)
+			{
+				//assert(false);
+				parameter_states = StateListPtr(new std::deque<StateInfo>(1)); // Drop old and create a new one
+			}
+			else
+			{
+			}
+		}
+		else
+		{
+			//assert(false);
+			parameter_states = StateListPtr(new std::deque<StateInfo>(1)); // Drop old and create a new one
+		}
+	}
+	else
+	{
+		assert(false);
+	}
+
+	infinite_states = &parameter_states;
+
+	infinite_position.init();
+	infinite_position.set(position_parameter.fen(), Options["UCI_Chess960"], &infinite_states->get()->back(), Threads.main());
+
+	fen_infinite_saved_main = infinite_position.fen();
+}
+
 bool MachineLearningControl::IsLearningInProgress()
 {
 	return learning_in_progress;
@@ -932,4 +994,38 @@ bool MachineLearningControl::IsLearningInProgress()
 bool MachineLearningControl::IsSimulatingInProgress()
 {
 	return simulating_in_progress;
+}
+
+void MachineLearningControl::infinite_learning_thread_function()
+{
+	while (!infinite_learning_exit)
+	{
+		while (!infinite_start)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+
+		Search::LimitsType start_limit;
+		start_limit.time[WHITE] = current_limit.time[WHITE];
+		start_limit.time[BLACK] = current_limit.time[BLACK];
+
+		do
+		{
+			start_limit.time[WHITE] *= 2;
+			start_limit.time[BLACK] *= 2;
+
+			Search::LimitsType current_limit = start_limit;
+
+			std::string local_string;
+			std::istringstream is_infinite(local_string);
+
+			StartLearning(infinite_position, position_infinite_string, is_infinite, *infinite_states, start_limit, ponder_mode_infinite);
+
+			{
+				Threads.main()->wait_for_search_finished();
+			}
+		} while (!infinite_stop && !infinite_learning_exit);
+
+		infinite_start = false;
+	}
 }

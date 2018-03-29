@@ -24,8 +24,19 @@ protected:
 	bool learning_round_finished;
 	bool simulating_in_progress;
 	bool first_game_move_answer;
+	bool infinite_learning_exit;
+	bool infinite_start;
+
+	std::string position_infinite_string;
+	Search::LimitsType current_limit;
+	bool ponder_mode_infinite;
+	Position infinite_position;
+	std::string fen_infinite_saved_main;
+	StateListPtr *infinite_states;
+
 
 	std::thread learning_thread;
+	std::thread infinite_learning_thread;
 
 	Position current_position;
 	Move Last_Move;
@@ -35,6 +46,7 @@ protected:
 
 	std::string fen_saved_main;
 	std::string position_saved_main;
+
 	Search::LimitsType game_simulation_limits;
 	bool game_simulation_ponderMode;
 
@@ -45,11 +57,12 @@ protected:
 	MachineLearningDataList MachineLearningDataStore;
 
 	void learning_thread_function();
+	void infinite_learning_thread_function();
 public:
 	MachineLearningControl();
 	~MachineLearningControl();
 
-	static const size_t games_to_simulate = 50;
+	static const size_t games_to_simulate = 10;			//	select maximum 10 candidates moves on each move during simulation
 
 	void SetFileName(std::string parameter_file_name);
 
@@ -66,11 +79,14 @@ public:
 	void ClearData();
 
 	void StartLearning(Position &position_parameter, std::string position_string, std::istringstream& is, StateListPtr& parameter_states, const Search::LimitsType& limits, bool ponderMode);
+	void StartInfiniteLearning(Position &position_parameter, std::string position_string, std::istringstream& is, StateListPtr& parameter_states, const Search::LimitsType& limits, bool ponderMode);
+
 	void EndLearning();
 	void LearningRoundFinished();
 	bool IsLearningInProgress();
 	bool IsSimulatingInProgress();
 	void PrepareLearning(Position &position_parameter, std::istringstream& is, StateListPtr& parameter_states);
+	void PrepareInfiniteLearning(Position &position_parameter, std::istringstream& is, StateListPtr& parameter_states);
 
 	void LearningExit();
 
