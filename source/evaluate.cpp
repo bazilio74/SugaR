@@ -28,7 +28,7 @@
 #include "evaluate.h"
 #include "material.h"
 #include "pawns.h"
-
+#include "thread.h"
 #include "uci.h"
 
 extern int Options_Junior_Depth;
@@ -39,8 +39,6 @@ extern bool Options_Junior_Passed;
 extern bool Options_Junior_Space;
 extern bool Options_Junior_Initiative;
 extern bool Options_Shashin_Strategy;
-
-std::atomic<Score> Eval::Contempt;
 
 namespace Trace {
 
@@ -855,7 +853,7 @@ namespace {
     // Initialize score by reading the incrementally updated scores included in
     // the position object (material + piece square tables) and the material
     // imbalance. Score is computed internally from the white point of view.
-    Score score = pos.psq_score() + me->imbalance() + Eval::Contempt;
+    Score score = pos.psq_score() + me->imbalance() + pos.this_thread()->contempt;
 
     // Probe the pawn hash table
     pe = Pawns::probe(pos);
@@ -970,7 +968,7 @@ std::string Eval::trace(const Position& pos) {
 
   std::memset(scores, 0, sizeof(scores));
 
-  Eval::Contempt = SCORE_ZERO; // Reset any dynamic contempt
+  pos.this_thread()->contempt = SCORE_ZERO; // Reset any dynamic contempt
 
   Value v = Evaluation<TRACE>(pos).value();
 
