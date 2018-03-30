@@ -784,10 +784,10 @@ void MachineLearningControl::learning_thread_function()
 					{
 						CurrentDataUsBestMoves.insert(local_move);
 					}
-					for (auto local_move : CurrentDataMoves4)
-					{
-						CurrentDataUsBestMoves.insert(local_move);
-					}
+					//for (auto local_move : CurrentDataMoves4)
+					//{
+					//	CurrentDataUsBestMoves.insert(local_move);
+					//}
 				}
 				else
 				{
@@ -801,10 +801,10 @@ void MachineLearningControl::learning_thread_function()
 						{
 							CurrentDataUsBestMoves.insert(local_move);
 						}
-						for (auto local_move : CurrentDataMoves3)
-						{
-							CurrentDataUsBestMoves.insert(local_move);
-						}
+						//for (auto local_move : CurrentDataMoves3)
+						//{
+						//	CurrentDataUsBestMoves.insert(local_move);
+						//}
 					}
 					else
 					{
@@ -855,35 +855,35 @@ void MachineLearningControl::learning_thread_function()
 				{
 					char local_string[data_atom_maximum_size];
 					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
-					sprintf_s(local_string, data_atom_maximum_size, "wtime %d ", final_game_limits.time[0]);
+					sprintf_s(local_string, data_atom_maximum_size, "wtime %I64d ", final_game_limits.time[0]);
 					input_stream_data += std::string(local_string);
 				}
 				if (final_game_limits.time[1] != 0)// && us == BLACK)
 				{
 					char local_string[data_atom_maximum_size];
 					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
-					sprintf_s(local_string, data_atom_maximum_size, "btime %d ", final_game_limits.time[1]);
+					sprintf_s(local_string, data_atom_maximum_size, "btime %I64d ", final_game_limits.time[1]);
 					input_stream_data += std::string(local_string);
 				}
 				if (final_game_limits.inc[0] != 0)// && us == WHITE)
 				{
 					char local_string[data_atom_maximum_size];
 					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
-					sprintf_s(local_string, data_atom_maximum_size, "winc %d ", final_game_limits.inc[0]);
+					sprintf_s(local_string, data_atom_maximum_size, "winc %I64d ", final_game_limits.inc[0]);
 					input_stream_data += std::string(local_string);
 				}
 				if (final_game_limits.inc[1] != 0)// && us == BLACK)
 				{
 					char local_string[data_atom_maximum_size];
 					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
-					sprintf_s(local_string, data_atom_maximum_size, "binc %d ", final_game_limits.inc[1]);
+					sprintf_s(local_string, data_atom_maximum_size, "binc %I64d ", final_game_limits.inc[1]);
 					input_stream_data += std::string(local_string);
 				}
 				if (final_game_limits.movetime != 0)
 				{
 					char local_string[data_atom_maximum_size];
 					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
-					sprintf_s(local_string, data_atom_maximum_size, "movetime %d ", final_game_limits.movetime);
+					sprintf_s(local_string, data_atom_maximum_size, "movetime %I64d ", final_game_limits.movetime);
 					input_stream_data += std::string(local_string);
 				}
 
