@@ -38,7 +38,7 @@ extern bool Options_Junior_Threats;
 extern bool Options_Junior_Passed;
 extern bool Options_Junior_Space;
 extern bool Options_Junior_Initiative;
-extern bool Options_Shashin_Strategy;
+extern bool Options_Junior_Strategy;
 
 namespace Trace {
 
@@ -875,27 +875,27 @@ namespace {
             + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
-	Value v_Shashin_test = v;
+	Value v_Junior_test = v;
 	
-	constexpr double SHASHIN_ADVANTAGE_PAWNS_COUNT = 1.0;
-	constexpr Value SHASHIN_ADVANTAGE_VALUE = Value(int(SHASHIN_ADVANTAGE_PAWNS_COUNT * double(PawnValueMg + PawnValueEg) / 2.0));
-	constexpr double Shashin_Scale_Factor_Default = 1.0;
+	constexpr double JUNIOR_ADVANTAGE_PAWNS_COUNT = 1.0;
+	constexpr Value JUNIOR_ADVANTAGE_VALUE = Value(int(JUNIOR_ADVANTAGE_PAWNS_COUNT * double(PawnValueMg + PawnValueEg) / 2.0));
+	constexpr double Junior_Scale_Factor_Default = 1.0;
 
-	double king_Shashin_scale = Shashin_Scale_Factor_Default;
-	double passed_Shashin_scale = Shashin_Scale_Factor_Default;
+	double king_Junior_scale = Junior_Scale_Factor_Default;
+	double passed_Junior_scale = Junior_Scale_Factor_Default;
 
-	if (Options_Shashin_Strategy)
+	if (Options_Junior_Strategy)
 	{
 		{
-			constexpr double Shashin_Winning_Scale_Factor_Default = 0.1;
+			constexpr double Junior_Winning_Scale_Factor_Default = 0.1;
 
 			constexpr double Alpha = 0.5;
-			const double Beta = abs(Shashin_Winning_Scale_Factor_Default * 2 / (MidgameLimit + EndgameLimit));
+			const double Beta = abs(Junior_Winning_Scale_Factor_Default * 2 / (MidgameLimit + EndgameLimit));
 
-			const double Shashin_Scale_Factor_Bonus = (-abs(v_Shashin_test / SHASHIN_ADVANTAGE_VALUE) + Alpha);
+			const double Junior_Scale_Factor_Bonus = (-abs(v_Junior_test / JUNIOR_ADVANTAGE_VALUE) + Alpha);
 
-			passed_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus * Beta;
-			king_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus * Beta;
+			passed_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus * Beta;
+			king_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus * Beta;
 		}
 	}
 
@@ -906,7 +906,7 @@ namespace {
 	if (Options_Junior_King)
 	{
 		Score default_king = king<   WHITE>() - king<   BLACK>();
-		Score score_king = Score(int(double(default_king) * king_Shashin_scale));
+		Score score_king = Score(int(double(default_king) * king_Junior_scale));
 		score += score_king;
 	}
 	if (Options_Junior_Threats)
@@ -916,7 +916,7 @@ namespace {
 	if (Options_Junior_Passed)
 	{
 		Score default_passed = passed< WHITE>() - passed< BLACK>();
-		Score score_passed = Score(int(double(default_passed) * passed_Shashin_scale));
+		Score score_passed = Score(int(double(default_passed) * passed_Junior_scale));
 		score += score_passed;
 	}
 	if (Options_Junior_Space)
