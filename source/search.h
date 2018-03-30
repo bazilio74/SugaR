@@ -82,7 +82,8 @@ struct LimitsType {
 
   LimitsType() { // Init explicitly due to broken value-initialization of non POD in MSVC
     nodes = time[WHITE] = time[BLACK] = inc[WHITE] = inc[BLACK] =
-    npmsec = movestogo = depth = movetime = mate = perft = infinite = 0;
+    npmsec = movetime = perft = infinite = movestogo = depth = mate = 0;
+	
   }
 
   bool use_time_management() const {
