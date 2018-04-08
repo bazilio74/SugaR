@@ -1,0 +1,88 @@
+setoption name Save Machine Learning File value true 
+go infinite 
+stop 
+setoption name Save Machine Learning File value true 
+go infinite 
+stop 
+go infinite 
+stop 
+quit 
+go infinite 
+position startpos 
+position startpos 
+go infinite 
+stop 
+go infinite 
+stop 
+position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 
+setoption name Save Machine Learning File value true 
+go infinite 
+stop 
+go infinite 
+stop 
+go infinite 
+position startpos 
+go infinite 
+stop 
+go infinite 
+position startpos 
+position startpos 
+go infinite 
+position startpos 
+position startpos 
+go infinite 
+position startpos 
+position startpos 
+go infinite 
+position startpos 
+position startpos 
+go infinite 
+position startpos 
+position startpos 
+go infinite 
+position startpos 
+position startpos 
+go infinite 
+position startpos 
+stop 
+position startpos 
+go infinite 
+position startpos 
+position startpos 
+go infinite 
+position startpos 
+go infinite 
+position startpos 
+go infinite 
+position startpos 
+position startpos 
+go infinite 
+position startpos 
+go infinite 
+position startpos 
+go infinite 
+position startpos 
+go infinite 
+position startpos 
+go infinite 
+stop 
+position startpos 
+go infinite 
+position startpos 
+go infinite 
+position startpos 
+go infinite 
+position startpos 
+go infinite 
+startpos 
+position startpos 
+go infinite 
+position startpos 
+go infinite 
+position startpos 
+go infinite 
+position startpos 
+go infinite 
+position startpos 
+go infinite 
+stop 
