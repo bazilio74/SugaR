@@ -50,13 +50,11 @@ public:
   Option(bool v, OnChange = nullptr);
   Option(const char* v, OnChange = nullptr);
   Option(int v, int minv, int maxv, OnChange = nullptr);
-  Option(const char* v, const char *cur, OnChange = nullptr);
 
   Option& operator=(const std::string&);
   void operator<<(const Option&);
   operator int() const;
   operator std::string() const;
-  bool operator==(const char*);
 
 private:
   friend std::ostream& operator<<(std::ostream&, const OptionsMap&);
@@ -78,5 +76,7 @@ Move to_move(const Position& pos, std::string& str);
 } // namespace UCI
 
 extern UCI::OptionsMap Options;
+
+extern bool infinite_stop;
 
 #endif // #ifndef UCI_H_INCLUDED

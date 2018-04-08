@@ -35,11 +35,14 @@
 
 #include "MachineLeaningControl.h"
 
-void learning(Position& pos, StateListPtr& states, const Search::LimitsType& limits, bool ponderMode, std::istringstream& is);
+void learning(Position& pos, std::string position_string, StateListPtr& states, const Search::LimitsType& limits, bool ponderMode, std::istringstream& is);
 void position_make_move(Position& pos, std::string& parameter_string, std::istringstream& is, StateListPtr& states);
 void learning_position_call(Position& pos, std::istringstream& is, StateListPtr& states);
-void go_stub(Position& pos, std::istringstream& is, StateListPtr& states);
+void go_stub(Position& pos, std::string position_string, std::istringstream& is, StateListPtr& states);
 void prepare_position(std::string parameter_fen, Position &position_parameter, StateListPtr& parameter_states);
+void learning_infinite(Position& pos, std::string position_string, StateListPtr& states, const Search::LimitsType& limits, bool ponderMode, std::istringstream& is);
+
+bool infinite_stop = false;
 
 using namespace std;
 
@@ -225,6 +228,14 @@ void UCI::loop(int argc, char* argv[]) {
 			cmd = "quit";
 
 		istringstream is(cmd);
+		
+		istringstream learning_is(cmd);
+
+		token.clear(); // Avoid a stale if getline() returns empty or blank line
+		is >> skipws >> token;
+
+		learning_is >> skipws >> token;
+
 
 		if (false)
 		{
@@ -244,14 +255,8 @@ void UCI::loop(int argc, char* argv[]) {
 
 				output_stream << std::endl;
 			}
-		}		
-		
-		istringstream learning_is(cmd);
+		}
 
-		token.clear(); // Avoid a stale if getline() returns empty or blank line
-		is >> skipws >> token;
-
-		learning_is >> skipws >> token;
 
 		// The GUI sends 'ponderhit' to tell us the user has played the expected move.
 		// So 'ponderhit' will be sent if we were told to ponder on the same move the
@@ -263,6 +268,8 @@ void UCI::loop(int argc, char* argv[]) {
 			|| (token == "ponderhit" && Threads.stopOnPonderhit))
 		{
 			Threads.stop = true;
+
+			infinite_stop = true;
 		}
 
 		else if (token == "ponderhit")
@@ -298,7 +305,7 @@ void UCI::loop(int argc, char* argv[]) {
 				position(pos, position_string_is, states);
 				position(learning_pos, position_learning_string_is, learning_states);
 			}
-			go_stub(pos, is, states);
+			go_stub(pos, position_string, is, states);
 		}
 		else if (token == "position")
 		{
@@ -420,7 +427,7 @@ void UCI::loop(int argc, char* argv[]) {
 			Search::LimitsType search_limits = Search::Limits;
 
 			MachineLearningControlMain.PrepareLearning(learning_pos, learning_is, learning_states);
-			learning(learning_pos, learning_states, search_limits, false, learning_is);
+			learning(learning_pos, position_learning_string, learning_states, search_limits, false, learning_is);
 		}
 		else
 			sync_cout << "Unknown command: " << cmd << sync_endl;
@@ -519,8 +526,7 @@ Move UCI::to_move(const Position& pos, string& str) {
 	return MOVE_NONE;
 }
 
-
-void learning(Position& pos, StateListPtr& states, const Search::LimitsType& limits, bool ponderMode, std::istringstream& is)
+void learning_infinite(Position& pos, std::string position_string, StateListPtr& states, const Search::LimitsType& limits, bool ponderMode, std::istringstream& is)
 {
 	string token;
 
@@ -528,7 +534,21 @@ void learning(Position& pos, StateListPtr& states, const Search::LimitsType& lim
 	{
 		if (token == "start")
 		{
-			MachineLearningControlMain.StartLearning(pos, is, states, limits, ponderMode);
+			MachineLearningControlMain.StartInfiniteLearning(pos, position_string, is, states, limits, ponderMode);
+		}
+	}
+}
+
+
+void learning(Position& pos, std::string position_string, StateListPtr& states, const Search::LimitsType& limits, bool ponderMode, std::istringstream& is)
+{
+	string token;
+
+	while (is >> token)
+	{
+		if (token == "start")
+		{
+			MachineLearningControlMain.StartLearning(pos, position_string, is, states, limits, ponderMode);
 		}
 		else if (token == "end")
 		{
@@ -570,7 +590,7 @@ void position_make_move(Position& current_position, std::string &parameter_strin
 	parameter_string += " " + token;
 }
 
-void go_stub(Position& pos, istringstream& is, StateListPtr& states) {
+void go_stub(Position& pos, std::string position_string, istringstream& is, StateListPtr& states) {
 
 	Search::LimitsType limits;
 	string token;
@@ -596,12 +616,40 @@ void go_stub(Position& pos, istringstream& is, StateListPtr& states) {
 		else if (token == "infinite")  limits.infinite = 1;
 		else if (token == "ponder")    ponderMode = true;
 
+		if (token == "infinite")
 		{
-			std::string input_stream_data("start");
-			std::istringstream input_stream(input_stream_data);
+			//if (true)
+			if (false)
+			{
+				Threads.start_thinking(pos, states, limits, ponderMode);
+			}
+			else
+			{
+				//	Own realization of infinite analisys using machine learning is not ready to end yet
+				Search::LimitsType start_limit;
+				start_limit.time[WHITE] = 1000 * 10;
+				start_limit.time[BLACK] = 1000 * 10;
 
-			//MachineLearningControlMain.PrepareLearning(pos, input_stream, states);
-			learning(pos, states, limits, ponderMode, input_stream);
+				std::string input_stream_data("start");
+				std::istringstream input_stream(input_stream_data);
+
+				learning_infinite(pos, position_string, states, start_limit, ponderMode, input_stream);
+			}
+		}
+		else
+		{
+			if (limits.time[WHITE]<900000 && limits.time[BLACK]<900000)
+			{
+				Threads.start_thinking(pos, states, limits, ponderMode);
+			}
+			else
+			{
+				//	Own realization of play using machine learning is not ready yet
+				std::string input_stream_data("start");
+				std::istringstream input_stream(input_stream_data);
+
+				learning(pos, position_string, states, limits, ponderMode, input_stream);
+			}
 		}
 }
 
