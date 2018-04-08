@@ -16,6 +16,25 @@
 #include "types.h"
 #include "movegen.h"
 
+
+//	Time formulas
+
+constexpr double alpha = 1.0;
+constexpr double beta = 1.0;
+
+constexpr double data_processing_time_part = 0.0;
+
+constexpr double gamma = 0.50 * (1.0 - data_processing_time_part);
+
+constexpr double half_moves_per_game = 240.0;
+
+constexpr double time_corrector_1 = (alpha) / (alpha + beta) / double(MachineLearningControl::games_to_simulate) * gamma;
+constexpr double time_corrector_2 = (beta) / (alpha + beta) * gamma;
+//	"time_corrector_1" is time part for each simulated games and "time_corrector_2" is time part for best moves from database
+
+
+
+
 MachineLearningControl MachineLearningControlMain;
 void learning_go_call(Position& pos, std::istringstream& is, StateListPtr& states);
 void learning_position_call(Position& pos, std::istringstream& is, StateListPtr& states);
@@ -28,14 +47,15 @@ inline void sleep_1_milli_second()
 
 
 MachineLearningControl::MachineLearningControl()
-	:learning_in_progress(false), learning_move_returned(true), current_position_set(false), learning_round_finished(false), learning_exit(false),
+	:learning_in_progress(false), learning_move_returned(true), current_position_set(false), learning_round_finished(true), learning_exit(false),
 	is_960(false), simulating_in_progress(false), first_game_move_answer(true), infinite_learning_exit(false),
 	states(NULL),
 	learning_thread(&MachineLearningControl::learning_thread_function, this),
 	infinite_learning_thread(&MachineLearningControl::infinite_learning_thread_function, this),
 	infinite_states(NULL),
-	infinite_start(false)
-
+	infinite_start(false),
+	infinite_analysis_in_progress(false),
+	current_infinite_depth(12)
 {
 }
 
@@ -168,6 +188,8 @@ void MachineLearningControl::StartInfiniteLearning(Position &position_parameter,
 	current_limit = limits;
 	ponder_mode_infinite = ponderMode;
 
+	current_infinite_depth = 12;
+
 	infinite_start = true;
 }
 
@@ -185,19 +207,6 @@ void MachineLearningControl::StartLearning(Position &position_parameter, std::st
 	game_simulation_ponderMode = ponderMode;
 
 	final_game_limits = limits;
-
-	double alpha = 1.0;
-	double beta = 1.0;
-
-	double data_processing_time_part = 0.0;
-
-	double gamma = 0.50 * (1.0 - data_processing_time_part);
-
-	double half_moves_per_game = 240.0;
-
-	double time_corrector_1 = (alpha) / (alpha + beta)/ double(games_to_simulate) * gamma;
-	double time_corrector_2 = (beta) / (alpha + beta) * gamma;
-	//	"time_corrector_1" is time part for each simulated games and "time_corrector_2" is time part for best moves from database
 
 	game_simulation_limits.time[0]		=	int(time_corrector_1 * game_simulation_limits.time[0]);
 	game_simulation_limits.time[1]		=	int(time_corrector_1 * game_simulation_limits.time[1]);
@@ -217,6 +226,7 @@ void MachineLearningControl::StartLearning(Position &position_parameter, std::st
 
 void MachineLearningControl::EndLearning()
 {
+	learning_round_finished = true;
 	learning_in_progress = false;
 
 	current_position_set = false;
@@ -261,180 +271,94 @@ void MachineLearningControl::learning_thread_function()
 
 		simulating_in_progress = true;
 
-		for (size_t game_number = 1; game_number <= games_to_simulate && !learning_exit; game_number++)
+		if (game_simulation_limits.time[WHITE] / time_corrector_1 >= 900000.0 || game_simulation_limits.time[BLACK] / time_corrector_1 >= 900000.0)
 		{
-			StateInfo st;
-			std::memset(&st, 0, sizeof(StateInfo));
-
-			learning_round_finished = false;
-
-			std::string fen_saved = fen_saved_main;
-			std::string position_saved = position_saved_main;
-
+			for (size_t game_number = 1; game_number <= games_to_simulate && !learning_exit; game_number++)
 			{
-				MachineLearningDataAtom MachineLearningDataAtomCurrent;
+				StateInfo st;
+				std::memset(&st, 0, sizeof(StateInfo));
 
-				std::string local_string;
+				learning_round_finished = false;
 
-				local_string = std::string("");
-				MachineLearningDataAtomCurrent.SetData(local_string);
-				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
+				std::string fen_saved = fen_saved_main;
+				std::string position_saved = position_saved_main;
 
-				local_string = std::string("");
-				MachineLearningDataAtomCurrent.SetData(local_string);
-				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
-
-				local_string = std::string("[FEN \"") + fen_saved + std::string("\"]");
-				MachineLearningDataAtomCurrent.SetData(local_string);
-				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
-
-				char local_char_buffer[data_atom_maximum_size];
-				memset(local_char_buffer, 0, data_atom_maximum_size * sizeof(char));
-				const char local_char_buffer_mask[] = "[Round \"%d\"]";
-				sprintf_s(local_char_buffer, data_atom_maximum_size, local_char_buffer_mask, game_number);
-				local_string = local_char_buffer;
-				MachineLearningDataAtomCurrent.SetData(local_string);
-				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
-
-				local_string = std::string("[Result \"*\"]");
-				MachineLearningDataAtomCurrent.SetData(local_string);
-				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
-
-				local_string = std::string("");
-				MachineLearningDataAtomCurrent.SetData(local_string);
-				MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
-			}
-
-			first_game_move_answer = true;
-
-			Search::LimitsType current_game_simulation_limits = game_simulation_limits;
-
-			while (learning_in_progress && !learning_round_finished && !learning_exit)
-			{
-				learning_move_returned = false;
-
-				Search::LimitsType limits;
-
-				bool ponderMode = false;
-
-				limits.startTime = now();
-
-				/*/
 				{
-					std::string input_stream_data("fen ");
-					input_stream_data += fen_saved;
-					std::istringstream input_stream(input_stream_data);
+					MachineLearningDataAtom MachineLearningDataAtomCurrent;
 
-					learning_position_call(current_position, input_stream, *states);
-				}
-				/*/
-				{
-					std::string input_stream_data(position_saved);
-					std::istringstream input_stream(input_stream_data);
+					std::string local_string;
 
-					learning_position_call(current_position, input_stream, *states);
+					local_string = std::string("");
+					MachineLearningDataAtomCurrent.SetData(local_string);
+					MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
+
+					local_string = std::string("");
+					MachineLearningDataAtomCurrent.SetData(local_string);
+					MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
+
+					local_string = std::string("[FEN \"") + fen_saved + std::string("\"]");
+					MachineLearningDataAtomCurrent.SetData(local_string);
+					MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
+
+					char local_char_buffer[data_atom_maximum_size];
+					memset(local_char_buffer, 0, data_atom_maximum_size * sizeof(char));
+					const char local_char_buffer_mask[] = "[Round \"%d\"]";
+					sprintf_s(local_char_buffer, data_atom_maximum_size, local_char_buffer_mask, game_number);
+					local_string = local_char_buffer;
+					MachineLearningDataAtomCurrent.SetData(local_string);
+					MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
+
+					local_string = std::string("[Result \"*\"]");
+					MachineLearningDataAtomCurrent.SetData(local_string);
+					MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
+
+					local_string = std::string("");
+					MachineLearningDataAtomCurrent.SetData(local_string);
+					MachineLearningDataStore.push_back(MachineLearningDataAtomCurrent);
 				}
 
-				if (false)
+				first_game_move_answer = true;
+
+				Search::LimitsType current_game_simulation_limits = game_simulation_limits;
+
+				while (learning_in_progress && !learning_round_finished && !learning_exit)
 				{
-					sync_cout << current_position << sync_endl;
-				}
+					learning_move_returned = false;
 
-				Color us = current_position.side_to_move();
+					Search::LimitsType limits;
 
-				if (current_position.is_draw(64))
-				{
-					LearningRoundFinished();
+					bool ponderMode = false;
 
-					std::cout << "Game over: draw" << std::endl;
+					limits.startTime = now();
 
+					/*/
 					{
-						auto MachineLearningDataAtomIteratorCurrent = MachineLearningDataStore.rbegin();
+						std::string input_stream_data("fen ");
+						input_stream_data += fen_saved;
+						std::istringstream input_stream(input_stream_data);
 
-						for (; MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend(); MachineLearningDataAtomIteratorCurrent++)
-						{
-							if (MachineLearningDataAtomIteratorCurrent->GetData() == std::string("[Result \"*\"]"))
-							{
-								break;
-							}
-						}
+						learning_position_call(current_position, input_stream, *states);
+					}
+					/*/
+					{
+						std::string input_stream_data(position_saved);
+						std::istringstream input_stream(input_stream_data);
 
-						if (MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend())
-						{
-							std::string game_result = std::string("1/2-1/2");
-							std::string local_string = std::string("[Result \"") + game_result + std::string("\"]");
-							MachineLearningDataAtomIteratorCurrent->SetData(local_string);
-						}
+						learning_position_call(current_position, input_stream, *states);
 					}
 
-					continue;
-				}
-
-				auto moveList = MoveList<LEGAL>(current_position);
-
-				if (moveList.size() == 0)
-				{
-					LearningRoundFinished();
-
-					if (current_position.checkers())
+					if (false)
 					{
-						if (us == WHITE)
-						{
-							std::cout << "Game over: black wins" << std::endl;
-
-							{
-								auto MachineLearningDataAtomIteratorCurrent = MachineLearningDataStore.rbegin();
-
-								for (; MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend(); MachineLearningDataAtomIteratorCurrent++)
-								{
-									if (MachineLearningDataAtomIteratorCurrent->GetData() == std::string("[Result \"*\"]"))
-									{
-										break;
-									}
-								}
-
-								if (MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend())
-								{
-									std::string game_result = std::string("0-1");
-									std::string local_string = std::string("[Result \"") + game_result + std::string("\"]");
-									MachineLearningDataAtomIteratorCurrent->SetData(local_string);
-								}
-							}
-						}
-						else
-						{
-							if (us == BLACK)
-							{
-								std::cout << "Game over: white wins" << std::endl;
-
-								{
-									auto MachineLearningDataAtomIteratorCurrent = MachineLearningDataStore.rbegin();
-
-									for (; MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend(); MachineLearningDataAtomIteratorCurrent++)
-									{
-										if (MachineLearningDataAtomIteratorCurrent->GetData() == std::string("[Result \"*\"]"))
-										{
-											break;
-										}
-									}
-
-									if (MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend())
-									{
-										std::string game_result = std::string("1-0");
-										std::string local_string = std::string("[Result \"") + game_result + std::string("\"]");
-										MachineLearningDataAtomIteratorCurrent->SetData(local_string);
-									}
-								}
-							}
-							else
-							{
-								assert(false);
-							}
-						}
+						sync_cout << current_position << sync_endl;
 					}
-					else
+
+					Color us = current_position.side_to_move();
+
+					if (current_position.is_draw(64))
 					{
-						std::cout << "Game over: draw" << std::endl;
+						LearningRoundFinished();
+
+						//std::cout << "Game over: draw" << std::endl;
 
 						{
 							auto MachineLearningDataAtomIteratorCurrent = MachineLearningDataStore.rbegin();
@@ -454,112 +378,168 @@ void MachineLearningControl::learning_thread_function()
 								MachineLearningDataAtomIteratorCurrent->SetData(local_string);
 							}
 						}
-					}
-
-					continue;
-				}
-				if (!learning_exit)
-				{
-					go(current_position, *states, current_game_simulation_limits, game_simulation_ponderMode);
-				}
-
-
-				while (!learning_move_returned && !learning_exit)
-				{
-					std::this_thread::sleep_for(std::chrono::milliseconds(1));
-				}
-
-				first_game_move_answer = false;
-
-				if (!is_ok(Last_Move) && !learning_exit)
-				{
-					LearningRoundFinished();
-
-					std::cout << "Last move is not ok" << std::endl;
-
-					continue;
-				}
-
-				if (current_position.legal(Last_Move) && !learning_exit)
-				{
-					current_position.do_move(Last_Move, st);
-
-					fen_saved = current_position.fen();
-
-					position_saved = position_saved + std::string(" ") + UCI::move(Last_Move, is_960);
-
-					if (!current_position.pos_is_ok() && !learning_exit)
-					{
-						LearningRoundFinished();
-
-						current_position.undo_move(Last_Move);
-
-						std::cout << "Position is not ok" << std::endl;
 
 						continue;
 					}
 
-					current_position.undo_move(Last_Move);
+					auto moveList = MoveList<LEGAL>(current_position);
 
-					if (type_of(Last_Move) == CASTLING)
+					if (moveList.size() == 0)
 					{
-						if (current_position.side_to_move() == WHITE)
+						LearningRoundFinished();
+
+						if (current_position.checkers())
 						{
-							size_t symbol_position_w;
-							size_t symbol_position;
-							symbol_position_w = fen_saved.find(' ');
-							assert(symbol_position_w != std::string::npos);
-
-							symbol_position = fen_saved.find('K', symbol_position_w);
-							if (symbol_position == std::string::npos)
+							if (us == WHITE)
 							{
-								symbol_position = fen_saved.find('Q', symbol_position_w);
-							}
+								//std::cout << "Game over: black wins" << std::endl;
 
-							if (symbol_position != std::string::npos)
-							{
-								if (fen_saved.at(symbol_position) == 'K')
 								{
-									fen_saved.erase(symbol_position, 1);
+									auto MachineLearningDataAtomIteratorCurrent = MachineLearningDataStore.rbegin();
+
+									for (; MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend(); MachineLearningDataAtomIteratorCurrent++)
+									{
+										if (MachineLearningDataAtomIteratorCurrent->GetData() == std::string("[Result \"*\"]"))
+										{
+											break;
+										}
+									}
+
+									if (MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend())
+									{
+										std::string game_result = std::string("0-1");
+										std::string local_string = std::string("[Result \"") + game_result + std::string("\"]");
+										MachineLearningDataAtomIteratorCurrent->SetData(local_string);
+									}
 								}
 							}
-
-							symbol_position = fen_saved.find('Q', symbol_position_w);
-							if (symbol_position != std::string::npos)
+							else
 							{
-								if (fen_saved.at(symbol_position) == 'Q')
+								if (us == BLACK)
 								{
-									fen_saved.erase(symbol_position, 1);
+									//std::cout << "Game over: white wins" << std::endl;
+
+									{
+										auto MachineLearningDataAtomIteratorCurrent = MachineLearningDataStore.rbegin();
+
+										for (; MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend(); MachineLearningDataAtomIteratorCurrent++)
+										{
+											if (MachineLearningDataAtomIteratorCurrent->GetData() == std::string("[Result \"*\"]"))
+											{
+												break;
+											}
+										}
+
+										if (MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend())
+										{
+											std::string game_result = std::string("1-0");
+											std::string local_string = std::string("[Result \"") + game_result + std::string("\"]");
+											MachineLearningDataAtomIteratorCurrent->SetData(local_string);
+										}
+									}
+								}
+								else
+								{
+									assert(false);
 								}
 							}
 						}
 						else
 						{
-							if (current_position.side_to_move() == BLACK)
-							{
-								size_t symbol_position_b;
-								size_t symbol_position;
-								symbol_position_b = fen_saved.find(' ');
-								assert(symbol_position_b != std::string::npos);
+							//std::cout << "Game over: draw" << std::endl;
 
-								symbol_position = fen_saved.find('k', symbol_position_b);
+							{
+								auto MachineLearningDataAtomIteratorCurrent = MachineLearningDataStore.rbegin();
+
+								for (; MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend(); MachineLearningDataAtomIteratorCurrent++)
+								{
+									if (MachineLearningDataAtomIteratorCurrent->GetData() == std::string("[Result \"*\"]"))
+									{
+										break;
+									}
+								}
+
+								if (MachineLearningDataAtomIteratorCurrent != MachineLearningDataStore.rend())
+								{
+									std::string game_result = std::string("1/2-1/2");
+									std::string local_string = std::string("[Result \"") + game_result + std::string("\"]");
+									MachineLearningDataAtomIteratorCurrent->SetData(local_string);
+								}
+							}
+						}
+
+						continue;
+					}
+					if (!learning_exit)
+					{
+						go(current_position, *states, current_game_simulation_limits, game_simulation_ponderMode);
+					}
+
+
+					while (!learning_move_returned && !learning_exit)
+					{
+						std::this_thread::sleep_for(std::chrono::milliseconds(1));
+					}
+
+					first_game_move_answer = false;
+
+					if (!is_ok(Last_Move) && !learning_exit)
+					{
+						LearningRoundFinished();
+
+						std::cout << "Last move is not ok" << std::endl;
+
+						continue;
+					}
+
+					if (current_position.legal(Last_Move) && !learning_exit)
+					{
+						current_position.do_move(Last_Move, st);
+
+						fen_saved = current_position.fen();
+
+						position_saved = position_saved + std::string(" ") + UCI::move(Last_Move, is_960);
+
+						if (!current_position.pos_is_ok() && !learning_exit)
+						{
+							LearningRoundFinished();
+
+							current_position.undo_move(Last_Move);
+
+							std::cout << "Position is not ok" << std::endl;
+
+							continue;
+						}
+
+						current_position.undo_move(Last_Move);
+
+						if (type_of(Last_Move) == CASTLING)
+						{
+							if (current_position.side_to_move() == WHITE)
+							{
+								size_t symbol_position_w;
+								size_t symbol_position;
+								symbol_position_w = fen_saved.find(' ');
+								assert(symbol_position_w != std::string::npos);
+
+								symbol_position = fen_saved.find('K', symbol_position_w);
 								if (symbol_position == std::string::npos)
 								{
-									symbol_position = fen_saved.find('q', symbol_position_b);
+									symbol_position = fen_saved.find('Q', symbol_position_w);
 								}
 
 								if (symbol_position != std::string::npos)
 								{
-									if (fen_saved.at(symbol_position) == 'k')
+									if (fen_saved.at(symbol_position) == 'K')
 									{
 										fen_saved.erase(symbol_position, 1);
 									}
 								}
 
-								symbol_position = fen_saved.find('q', symbol_position_b);
+								symbol_position = fen_saved.find('Q', symbol_position_w);
 								if (symbol_position != std::string::npos)
 								{
-									if (fen_saved.at(symbol_position) == 'q')
+									if (fen_saved.at(symbol_position) == 'Q')
 									{
 										fen_saved.erase(symbol_position, 1);
 									}
@@ -567,45 +547,78 @@ void MachineLearningControl::learning_thread_function()
 							}
 							else
 							{
-								assert(false);
+								if (current_position.side_to_move() == BLACK)
+								{
+									size_t symbol_position_b;
+									size_t symbol_position;
+									symbol_position_b = fen_saved.find(' ');
+									assert(symbol_position_b != std::string::npos);
+
+									symbol_position = fen_saved.find('k', symbol_position_b);
+									if (symbol_position == std::string::npos)
+									{
+										symbol_position = fen_saved.find('q', symbol_position_b);
+									}
+
+									if (symbol_position != std::string::npos)
+									{
+										if (fen_saved.at(symbol_position) == 'k')
+										{
+											fen_saved.erase(symbol_position, 1);
+										}
+									}
+
+									symbol_position = fen_saved.find('q', symbol_position_b);
+									if (symbol_position != std::string::npos)
+									{
+										if (fen_saved.at(symbol_position) == 'q')
+										{
+											fen_saved.erase(symbol_position, 1);
+										}
+									}
+								}
+								else
+								{
+									assert(false);
+								}
 							}
 						}
 					}
+					else
+					{
+						//std::cout << "Game over" << std::endl;
+					}
+
+					current_game_simulation_limits.time[us] -= int(now() - limits.startTime);
+				}
+
+				if (SaveData() == 1)
+				{
+					assert(false);
 				}
 				else
 				{
-					std::cout << "Game over" << std::endl;
+					if (SaveData() == 0)
+					{
+						ClearData();
+					}
 				}
 
-				current_game_simulation_limits.time[us] -= int(now() - limits.startTime);
-			}
 
-			if (SaveData() == 1)
-			{
-				assert(false);
-			}
-			else
-			{
-				if (SaveData() == 0)
+				if (!learning_exit)
 				{
-					ClearData();
+					std::string input_stream_data("startpos");
+					std::istringstream input_stream(input_stream_data);
+					learning_position_call(current_position, input_stream, *states);
 				}
-			}
 
-
-			if (!learning_exit)
-			{
-				std::string input_stream_data("startpos");
-				std::istringstream input_stream(input_stream_data);
-				learning_position_call(current_position, input_stream, *states);
-			}
-
-			if (!learning_exit)
-			{
-				std::string input_stream_data("fen ");
-				input_stream_data += fen_saved_main;
-				std::istringstream input_stream(input_stream_data);
-				learning_position_call(current_position, input_stream, *states);
+				if (!learning_exit)
+				{
+					std::string input_stream_data("fen ");
+					input_stream_data += fen_saved_main;
+					std::istringstream input_stream(input_stream_data);
+					learning_position_call(current_position, input_stream, *states);
+				}
 			}
 		}
 
@@ -851,35 +864,35 @@ void MachineLearningControl::learning_thread_function()
 				}
 				input_stream_data = std::string();
 
-				if (final_game_limits.time[0] != 0)// && us == WHITE)
+				if (final_game_limits.time[0] != 0 && !infinite_analysis_in_progress)// && us == WHITE)
 				{
 					char local_string[data_atom_maximum_size];
 					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
 					sprintf_s(local_string, data_atom_maximum_size, "wtime %I64d ", final_game_limits.time[0]);
 					input_stream_data += std::string(local_string);
 				}
-				if (final_game_limits.time[1] != 0)// && us == BLACK)
+				if (final_game_limits.time[1] != 0 && !infinite_analysis_in_progress)// && us == BLACK)
 				{
 					char local_string[data_atom_maximum_size];
 					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
 					sprintf_s(local_string, data_atom_maximum_size, "btime %I64d ", final_game_limits.time[1]);
 					input_stream_data += std::string(local_string);
 				}
-				if (final_game_limits.inc[0] != 0)// && us == WHITE)
+				if (final_game_limits.inc[0] != 0 && !infinite_analysis_in_progress)// && us == WHITE)
 				{
 					char local_string[data_atom_maximum_size];
 					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
 					sprintf_s(local_string, data_atom_maximum_size, "winc %I64d ", final_game_limits.inc[0]);
 					input_stream_data += std::string(local_string);
 				}
-				if (final_game_limits.inc[1] != 0)// && us == BLACK)
+				if (final_game_limits.inc[1] != 0 && !infinite_analysis_in_progress)// && us == BLACK)
 				{
 					char local_string[data_atom_maximum_size];
 					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
 					sprintf_s(local_string, data_atom_maximum_size, "binc %I64d ", final_game_limits.inc[1]);
 					input_stream_data += std::string(local_string);
 				}
-				if (final_game_limits.movetime != 0)
+				if (final_game_limits.movetime != 0 && !infinite_analysis_in_progress)
 				{
 					char local_string[data_atom_maximum_size];
 					memset(local_string, 0, data_atom_maximum_size * sizeof(char));
@@ -895,10 +908,24 @@ void MachineLearningControl::learning_thread_function()
 
 			simulating_in_progress = false;
 
+			if (infinite_analysis_in_progress)
+			{
+				char local_string[data_atom_maximum_size];
+				memset(local_string, 0, data_atom_maximum_size * sizeof(char));
+				sprintf_s(local_string, data_atom_maximum_size, "depth %I64d ", current_infinite_depth);
+				input_stream_data += std::string(local_string);
+
+				current_infinite_depth++;
+			}
+
 			std::istringstream input_stream(input_stream_data);
 
 			learning_go_call(current_position, input_stream, *states);
+
 		}
+
+		learning_round_finished = true;
+		learning_in_progress = false;
 
 		current_position_set = false;
 	}
@@ -1011,21 +1038,37 @@ void MachineLearningControl::infinite_learning_thread_function()
 
 		do
 		{
-			start_limit.time[WHITE] *= 2;
-			start_limit.time[BLACK] *= 2;
+			infinite_analysis_in_progress = true;
+			if (!learning_in_progress && learning_round_finished)
+			{
+				start_limit.time[WHITE] *= 2;
+				start_limit.time[BLACK] *= 2;
 
-			Search::LimitsType current_limit = start_limit;
+				Search::LimitsType current_limit = start_limit;
 
-			std::string local_string;
-			std::istringstream is_infinite(local_string);
+				std::string local_string;
+				std::istringstream is_infinite(local_string);
 
-			StartLearning(infinite_position, position_infinite_string, is_infinite, *infinite_states, start_limit, ponder_mode_infinite);
+			
+				StartLearning(infinite_position, position_infinite_string, is_infinite, *infinite_states, current_limit, ponder_mode_infinite);
+			}
 
 			{
 				Threads.main()->wait_for_search_finished();
 			}
+			infinite_analysis_in_progress = false;
 		} while (!infinite_stop && !infinite_learning_exit);
 
 		infinite_start = false;
 	}
+}
+
+int64_t MachineLearningControl::GetCurrentInfiniteDepth()
+{
+	return current_infinite_depth;
+}
+
+bool MachineLearningControl::IsInfiniteAnalysisInProgress()
+{
+	return infinite_analysis_in_progress;
 }

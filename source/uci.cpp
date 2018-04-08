@@ -618,13 +618,14 @@ void go_stub(Position& pos, std::string position_string, istringstream& is, Stat
 
 		if (token == "infinite")
 		{
-			if (true)
+			//if (true)
+			if (false)
 			{
 				Threads.start_thinking(pos, states, limits, ponderMode);
 			}
 			else
 			{
-				//	Own realization of infinite analisys using machine learning is not ready yet
+				//	Own realization of infinite analisys using machine learning is not ready to end yet
 				Search::LimitsType start_limit;
 				start_limit.time[WHITE] = 1000 * 10;
 				start_limit.time[BLACK] = 1000 * 10;
@@ -637,7 +638,7 @@ void go_stub(Position& pos, std::string position_string, istringstream& is, Stat
 		}
 		else
 		{
-			if (true)
+			if (limits.time[WHITE]<900000 && limits.time[BLACK]<900000)
 			{
 				Threads.start_thinking(pos, states, limits, ponderMode);
 			}

@@ -38,6 +38,9 @@ protected:
 	std::thread learning_thread;
 	std::thread infinite_learning_thread;
 
+	bool infinite_analysis_in_progress;
+	int64_t current_infinite_depth;
+
 	Position current_position;
 	Move Last_Move;
 	bool is_960;
@@ -62,7 +65,7 @@ public:
 	MachineLearningControl();
 	~MachineLearningControl();
 
-	static const size_t games_to_simulate = 10;			//	select maximum 10 candidates moves on each move during simulation
+	static constexpr size_t games_to_simulate = 10;			//	select maximum 10 candidates moves on each move during simulation
 
 	void SetFileName(std::string parameter_file_name);
 
@@ -91,6 +94,9 @@ public:
 	void LearningExit();
 
 	void Answer(Move parameter_Move, bool parameter_960);
+
+	int64_t GetCurrentInfiniteDepth();
+	bool IsInfiniteAnalysisInProgress();
 };
 
 extern MachineLearningControl MachineLearningControlMain;

@@ -344,7 +344,7 @@ finalize:
 
   MachineLearningControlMain.Answer(bestThread->rootMoves[0].pv[0], rootPos.is_chess960());
 
-  if (!MachineLearningControlMain.IsSimulatingInProgress())
+  if (!MachineLearningControlMain.IsSimulatingInProgress() && !MachineLearningControlMain.IsInfiniteAnalysisInProgress())
   {
 	  sync_cout << "bestmove " << UCI::move(bestThread->rootMoves[0].pv[0], rootPos.is_chess960());
 
@@ -936,9 +936,20 @@ moves_loop: // When in check, search starts from here
       if (rootNode && thisThread == Threads.main() && Time.elapsed() > 3000)
 		  if (!MachineLearningControlMain.IsSimulatingInProgress())
 		  {
-			  sync_cout << "info depth " << depth / ONE_PLY
-				  << " currmove " << UCI::move(move, pos.is_chess960())
-				  << " currmovenumber " << moveCount + thisThread->PVIdx << sync_endl;
+			  if (MachineLearningControlMain.IsInfiniteAnalysisInProgress())
+			  {
+				  sync_cout << "info depth " << MachineLearningControlMain.GetCurrentInfiniteDepth()
+					  << " currmove " << UCI::move(move, pos.is_chess960())
+					  << " currmovenumber " << moveCount + thisThread->PVIdx 
+					  << sync_endl;
+
+			  }
+			  else
+			  {
+				  sync_cout << "info depth " << depth / ONE_PLY
+					  << " currmove " << UCI::move(move, pos.is_chess960())
+					  << " currmovenumber " << moveCount + thisThread->PVIdx << sync_endl;
+			  }
 		  }
       if (PvNode)
           (ss+1)->pv = nullptr;
@@ -1646,8 +1657,8 @@ string UCI::pv(const Position& pos, Depth depth, Value alpha, Value beta) {
       if (ss.rdbuf()->in_avail()) // Not at first line
           ss << "\n";
 
-      ss << "info"
-         << " depth "    << d / ONE_PLY
+	  ss << "info"
+		  << " depth " << (MachineLearningControlMain.IsInfiniteAnalysisInProgress() ? MachineLearningControlMain .GetCurrentInfiniteDepth() : d / ONE_PLY)
          << " seldepth " << rootMoves[i].selDepth
          << " multipv "  << i + 1
          << " score "    << UCI::value(v);
