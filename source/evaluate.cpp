@@ -28,7 +28,7 @@
 #include "evaluate.h"
 #include "material.h"
 #include "pawns.h"
-
+#include "thread.h"
 #include "uci.h"
 
 extern int Options_Junior_Depth;
@@ -38,9 +38,7 @@ extern bool Options_Junior_Threats;
 extern bool Options_Junior_Passed;
 extern bool Options_Junior_Space;
 extern bool Options_Junior_Initiative;
-extern bool Options_Shashin_Strategy;
-
-std::atomic<Score> Eval::Contempt;
+extern bool Options_Junior_Strategy;
 
 namespace Trace {
 
@@ -385,7 +383,7 @@ namespace {
 
         if (Pt == ROOK)
         {
-            // Bonus for aligning rook with with enemy pawns on the same rank/file
+            // Bonus for aligning rook with enemy pawns on the same rank/file
             if (relative_rank(Us, s) >= RANK_5)
                 score += RookOnPawn * popcount(pos.pieces(Them, PAWN) & PseudoAttacks[ROOK][s]);
 
@@ -704,7 +702,7 @@ namespace {
             }
             else if (pos.pieces(Us) & blockSq)
                 bonus += make_score(w + r * 2, w + r * 2);
-        } // rr != 0
+        } // w != 0
 
         // Scale down bonus for candidate passers which need more than one
         // pawn push to become passed or have a pawn in front of them.
@@ -812,11 +810,10 @@ namespace {
     {
         if (pos.opposite_bishops())
         {
-            // Endgame with opposite-colored bishops and no other pieces (ignoring pawns)
-            // is almost a draw, in case of KBP vs KB, it is even more a draw.
+            // Endgame with opposite-colored bishops and no other pieces is almost a draw
             if (   pos.non_pawn_material(WHITE) == BishopValueMg
                 && pos.non_pawn_material(BLACK) == BishopValueMg)
-                sf = more_than_one(pos.pieces(PAWN)) ? 31 : 9;
+                sf = 31;
 
             // Endgame with opposite-colored bishops, but also other pieces. Still
             // a bit drawish, but not as drawish as with only the two bishops.
@@ -855,7 +852,7 @@ namespace {
     // Initialize score by reading the incrementally updated scores included in
     // the position object (material + piece square tables) and the material
     // imbalance. Score is computed internally from the white point of view.
-    Score score = pos.psq_score() + me->imbalance() + Eval::Contempt;
+    Score score = pos.psq_score() + me->imbalance() + pos.this_thread()->contempt;
 
     // Probe the pawn hash table
     pe = Pawns::probe(pos);
@@ -877,27 +874,27 @@ namespace {
             + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
-	Value v_Shashin_test = v;
+	Value v_Junior_test = v;
 	
-	constexpr double SHASHIN_ADVANTAGE_PAWNS_COUNT = 1.0;
-	constexpr Value SHASHIN_ADVANTAGE_VALUE = Value(int(SHASHIN_ADVANTAGE_PAWNS_COUNT * double(PawnValueMg + PawnValueEg) / 2.0));
-	constexpr double Shashin_Scale_Factor_Default = 1.0;
+	constexpr double JUNIOR_ADVANTAGE_PAWNS_COUNT = 1.0;
+	constexpr Value JUNIOR_ADVANTAGE_VALUE = Value(int(JUNIOR_ADVANTAGE_PAWNS_COUNT * double(PawnValueMg + PawnValueEg) / 2.0));
+	constexpr double Junior_Scale_Factor_Default = 1.0;
 
-	double king_Shashin_scale = Shashin_Scale_Factor_Default;
-	double passed_Shashin_scale = Shashin_Scale_Factor_Default;
+	double king_Junior_scale = Junior_Scale_Factor_Default;
+	double passed_Junior_scale = Junior_Scale_Factor_Default;
 
-	if (Options_Shashin_Strategy)
+	if (Options_Junior_Strategy)
 	{
 		{
-			constexpr double Shashin_Winning_Scale_Factor_Default = 0.1;
+			constexpr double Junior_Winning_Scale_Factor_Default = 0.1;
 
 			constexpr double Alpha = 0.5;
-			const double Beta = abs(Shashin_Winning_Scale_Factor_Default * 2 / (MidgameLimit + EndgameLimit));
+			const double Beta = abs(Junior_Winning_Scale_Factor_Default * 2 / (MidgameLimit + EndgameLimit));
 
-			const double Shashin_Scale_Factor_Bonus = (-abs(v_Shashin_test / SHASHIN_ADVANTAGE_VALUE) + Alpha);
+			const double Junior_Scale_Factor_Bonus = (-abs(v_Junior_test / JUNIOR_ADVANTAGE_VALUE) + Alpha);
 
-			passed_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus * Beta;
-			king_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus * Beta;
+			passed_Junior_scale = Junior_Scale_Factor_Default + Junior_Scale_Factor_Bonus * Beta;
+			king_Junior_scale = Junior_Scale_Factor_Default - Junior_Scale_Factor_Bonus * Beta;
 		}
 	}
 
@@ -908,7 +905,7 @@ namespace {
 	if (Options_Junior_King)
 	{
 		Score default_king = king<   WHITE>() - king<   BLACK>();
-		Score score_king = Score(int(double(default_king) * king_Shashin_scale));
+		Score score_king = Score(int(double(default_king) * king_Junior_scale));
 		score += score_king;
 	}
 	if (Options_Junior_Threats)
@@ -918,7 +915,7 @@ namespace {
 	if (Options_Junior_Passed)
 	{
 		Score default_passed = passed< WHITE>() - passed< BLACK>();
-		Score score_passed = Score(int(double(default_passed) * passed_Shashin_scale));
+		Score score_passed = Score(int(double(default_passed) * passed_Junior_scale));
 		score += score_passed;
 	}
 	if (Options_Junior_Space)
@@ -970,7 +967,7 @@ std::string Eval::trace(const Position& pos) {
 
   std::memset(scores, 0, sizeof(scores));
 
-  Eval::Contempt = SCORE_ZERO; // Reset any dynamic contempt
+  pos.this_thread()->contempt = SCORE_ZERO; // Reset any dynamic contempt
 
   Value v = Evaluation<TRACE>(pos).value();
 
