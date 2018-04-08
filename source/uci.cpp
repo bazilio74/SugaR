@@ -227,6 +227,8 @@ void UCI::loop(int argc, char* argv[]) {
 		if (argc == 1 && !getline(cin, cmd)) // Block here waiting for input or EOF
 			cmd = "quit";
 
+	local_learinig_state_go_infinite:
+
 		istringstream is(cmd);
 		
 		istringstream learning_is(cmd);
@@ -237,7 +239,7 @@ void UCI::loop(int argc, char* argv[]) {
 		learning_is >> skipws >> token;
 
 
-		if (false)
+#ifdef _DEBUG
 		{
 			istringstream local_is(cmd);
 			std::ofstream output_stream;
@@ -256,6 +258,7 @@ void UCI::loop(int argc, char* argv[]) {
 				output_stream << std::endl;
 			}
 		}
+#endif
 
 
 		// The GUI sends 'ponderhit' to tell us the user has played the expected move.
@@ -280,17 +283,51 @@ void UCI::loop(int argc, char* argv[]) {
 			<< "\n" << Options
 			<< "\nuciok" << sync_endl;
 
-		else if (token == "setoption")  setoption(is);
-		else if (token == "go")
+		else if (token == "setoption")
 		{
+			bool local_learinig_state = MachineLearningControlMain.IsLearningInProgress();
+
 			Threads.stop = true;
-			if (MachineLearningControlMain.IsLearningInProgress())
+
+			if (local_learinig_state)
 			{
 				MachineLearningControlMain.EndLearning();
 			}
-			{
-				Threads.main()->wait_for_search_finished();
 
+			Threads.main()->wait_for_search_finished();
+
+			while (MachineLearningControlMain.learning_in_progress_object)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
+
+			setoption(is);
+
+			if (local_learinig_state)
+			{
+				cmd = std::string("go infinite");
+
+				goto local_learinig_state_go_infinite;
+			}
+		}
+		else if (token == "go")
+		{
+			bool local_learinig_state = MachineLearningControlMain.IsLearningInProgress();
+
+			Threads.stop = true;
+
+			if (local_learinig_state)
+			{
+				MachineLearningControlMain.EndLearning();
+			}
+
+			Threads.main()->wait_for_search_finished();
+
+			while (MachineLearningControlMain.learning_in_progress_object)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
+			{
 				StateListPtr state_list_ptr;
 
 				prepare_position(position_fen, pos, state_list_ptr);
@@ -309,6 +346,22 @@ void UCI::loop(int argc, char* argv[]) {
 		}
 		else if (token == "position")
 		{
+			bool local_learinig_state = MachineLearningControlMain.IsLearningInProgress();
+
+			Threads.stop = true;
+
+			if (local_learinig_state)
+			{
+				MachineLearningControlMain.EndLearning();
+			}
+
+			Threads.main()->wait_for_search_finished();
+
+			while (MachineLearningControlMain.learning_in_progress_object)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
+
 			position(pos, is, states);
 			position(learning_pos, learning_is, learning_states);
 
@@ -322,6 +375,13 @@ void UCI::loop(int argc, char* argv[]) {
 
 			position_fen = pos.fen();
 			learning_position_fen = learning_pos.fen();
+
+			if (local_learinig_state)
+			{
+				cmd = std::string("go infinite");
+
+				goto local_learinig_state_go_infinite;
+			}
 		}
 		else if (token == "ucinewgame") Search::clear();
 		else if (token == "isready")    sync_cout << "readyok" << sync_endl;
@@ -329,6 +389,22 @@ void UCI::loop(int argc, char* argv[]) {
 		// Additional custom non-UCI commands, mainly for debugging
 		else if (token == "flip")
 		{
+			bool local_learinig_state = MachineLearningControlMain.IsLearningInProgress();
+
+			Threads.stop = true;
+
+			if (local_learinig_state)
+			{
+				MachineLearningControlMain.EndLearning();
+			}
+
+			Threads.main()->wait_for_search_finished();
+
+			while (MachineLearningControlMain.learning_in_progress_object)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
+
 			StateListPtr state_list_ptr;
 
 			prepare_position(position_fen, pos, state_list_ptr);
@@ -347,6 +423,22 @@ void UCI::loop(int argc, char* argv[]) {
 		}
 		else if (token == "bench")
 		{
+			bool local_learinig_state = MachineLearningControlMain.IsLearningInProgress();
+
+			Threads.stop = true;
+
+			if (local_learinig_state)
+			{
+				MachineLearningControlMain.EndLearning();
+			}
+
+			Threads.main()->wait_for_search_finished();
+
+			while (MachineLearningControlMain.learning_in_progress_object)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
+
 			StateListPtr state_list_ptr;
 
 			prepare_position(position_fen, pos, state_list_ptr);
@@ -365,6 +457,22 @@ void UCI::loop(int argc, char* argv[]) {
 		}
 		else if (token == "d")
 		{
+			bool local_learinig_state = MachineLearningControlMain.IsLearningInProgress();
+
+			Threads.stop = true;
+
+			if (local_learinig_state)
+			{
+				MachineLearningControlMain.EndLearning();
+			}
+
+			Threads.main()->wait_for_search_finished();
+
+			while (MachineLearningControlMain.learning_in_progress_object)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
+
 			StateListPtr state_list_ptr;
 
 			prepare_position(position_fen, pos, state_list_ptr);
@@ -384,6 +492,22 @@ void UCI::loop(int argc, char* argv[]) {
 		else if (token == "eval")  sync_cout << Eval::trace(pos) << sync_endl;
 		else if (token == "move")
 		{
+			bool local_learinig_state = MachineLearningControlMain.IsLearningInProgress();
+
+			Threads.stop = true;
+
+			if (local_learinig_state)
+			{
+				MachineLearningControlMain.EndLearning();
+			}
+
+			Threads.main()->wait_for_search_finished();
+
+			while (MachineLearningControlMain.learning_in_progress_object)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
+
 			StateListPtr state_list_ptr;
 
 			prepare_position(position_fen, pos, state_list_ptr);
@@ -406,9 +530,21 @@ void UCI::loop(int argc, char* argv[]) {
 		}
 		else if (token == "learning")
 		{
+			bool local_learinig_state = MachineLearningControlMain.IsLearningInProgress();
+
 			Threads.stop = true;
 
+			if (local_learinig_state)
+			{
+				MachineLearningControlMain.EndLearning();
+			}
+
 			Threads.main()->wait_for_search_finished();
+
+			while (MachineLearningControlMain.learning_in_progress_object)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
 
 			StateListPtr state_list_ptr;
 
@@ -443,11 +579,21 @@ void UCI::loop(int argc, char* argv[]) {
 
 		if (token == "stop")
 		{
+			bool local_learinig_state = MachineLearningControlMain.IsLearningInProgress();
+
 			Threads.stop = true;
 
-			MachineLearningControlMain.EndLearning();
+			if (local_learinig_state)
+			{
+				MachineLearningControlMain.EndLearning();
+			}
 
 			Threads.main()->wait_for_search_finished();
+
+			while (MachineLearningControlMain.learning_in_progress_object)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			}
 		}
 
 	} while (token != "quit" && argc == 1); // Command line args are one-shot

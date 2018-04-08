@@ -97,6 +97,8 @@ public:
 
 	int64_t GetCurrentInfiniteDepth();
 	bool IsInfiniteAnalysisInProgress();
+
+	bool learning_in_progress_object;
 };
 
 extern MachineLearningControl MachineLearningControlMain;

@@ -50,12 +50,14 @@ MachineLearningControl::MachineLearningControl()
 	:learning_in_progress(false), learning_move_returned(true), current_position_set(false), learning_round_finished(true), learning_exit(false),
 	is_960(false), simulating_in_progress(false), first_game_move_answer(true), infinite_learning_exit(false),
 	states(NULL),
-	learning_thread(&MachineLearningControl::learning_thread_function, this),
-	infinite_learning_thread(&MachineLearningControl::infinite_learning_thread_function, this),
 	infinite_states(NULL),
 	infinite_start(false),
 	infinite_analysis_in_progress(false),
-	current_infinite_depth(12)
+	current_infinite_depth(12),
+	learning_in_progress_object(false),
+
+	learning_thread(&MachineLearningControl::learning_thread_function, this),
+	infinite_learning_thread(&MachineLearningControl::infinite_learning_thread_function, this)
 {
 }
 
@@ -195,10 +197,6 @@ void MachineLearningControl::StartInfiniteLearning(Position &position_parameter,
 
 void MachineLearningControl::StartLearning(Position &position_parameter, std::string position_string, std::istringstream& is, StateListPtr& parameter_states, const Search::LimitsType& limits, bool ponderMode)
 {
-	learning_in_progress = true;
-
-	learning_round_finished = false;
-
 	PrepareLearning(position_parameter, is, parameter_states);
 
 	position_saved_main = position_string;
@@ -220,6 +218,10 @@ void MachineLearningControl::StartLearning(Position &position_parameter, std::st
 	final_game_limits.inc[1]			=	int(time_corrector_2 * final_game_limits.inc[1]);
 	final_game_limits.movetime			=	int(time_corrector_2 * final_game_limits.movetime);
 
+	learning_in_progress = true;
+
+	learning_round_finished = false;
+
 	current_position_set = true;
 }
 
@@ -230,6 +232,8 @@ void MachineLearningControl::EndLearning()
 	learning_in_progress = false;
 
 	current_position_set = false;
+
+	infinite_stop = true;
 }
 
 
@@ -264,16 +268,23 @@ void MachineLearningControl::learning_thread_function()
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 
+		if (learning_exit)
+		{
+			continue;
+		}
+
 		//Options["Threads"] = 1;							//	for easier debuging
 		//Options["Save Machine Learning File"] = true;		//	for easier debuging
 
 		//ClearData();
 
+		learning_in_progress_object = true;
+
 		simulating_in_progress = true;
 
 		if (game_simulation_limits.time[WHITE] / time_corrector_1 >= 900000.0 || game_simulation_limits.time[BLACK] / time_corrector_1 >= 900000.0)
 		{
-			for (size_t game_number = 1; game_number <= games_to_simulate && !learning_exit; game_number++)
+			for (size_t game_number = 1; game_number <= games_to_simulate && !learning_exit && learning_in_progress; game_number++)
 			{
 				StateInfo st;
 				std::memset(&st, 0, sizeof(StateInfo));
@@ -340,6 +351,7 @@ void MachineLearningControl::learning_thread_function()
 						learning_position_call(current_position, input_stream, *states);
 					}
 					/*/
+					if (!infinite_stop)
 					{
 						std::string input_stream_data(position_saved);
 						std::istringstream input_stream(input_stream_data);
@@ -476,102 +488,75 @@ void MachineLearningControl::learning_thread_function()
 					}
 
 
-					while (!learning_move_returned && !learning_exit)
+					while (!learning_move_returned && !learning_exit && learning_in_progress)
 					{
 						std::this_thread::sleep_for(std::chrono::milliseconds(1));
 					}
 
 					first_game_move_answer = false;
 
-					if (!is_ok(Last_Move) && !learning_exit)
+					if (learning_in_progress)
 					{
-						LearningRoundFinished();
-
-						std::cout << "Last move is not ok" << std::endl;
-
-						continue;
-					}
-
-					if (current_position.legal(Last_Move) && !learning_exit)
-					{
-						current_position.do_move(Last_Move, st);
-
-						fen_saved = current_position.fen();
-
-						position_saved = position_saved + std::string(" ") + UCI::move(Last_Move, is_960);
-
-						if (!current_position.pos_is_ok() && !learning_exit)
+						if (!is_ok(Last_Move) && !learning_exit)
 						{
 							LearningRoundFinished();
 
-							current_position.undo_move(Last_Move);
-
-							std::cout << "Position is not ok" << std::endl;
+							std::cout << "Last move is not ok" << std::endl;
 
 							continue;
 						}
+					}
 
-						current_position.undo_move(Last_Move);
-
-						if (type_of(Last_Move) == CASTLING)
+					if (learning_in_progress)
+					{
+						if (current_position.legal(Last_Move) && !learning_exit)
 						{
-							if (current_position.side_to_move() == WHITE)
+							current_position.do_move(Last_Move, st);
+
+							fen_saved = current_position.fen();
+
+							position_saved = position_saved + std::string(" ") + UCI::move(Last_Move, is_960);
+
+							if (!current_position.pos_is_ok() && !learning_exit)
 							{
-								size_t symbol_position_w;
-								size_t symbol_position;
-								symbol_position_w = fen_saved.find(' ');
-								assert(symbol_position_w != std::string::npos);
+								LearningRoundFinished();
 
-								symbol_position = fen_saved.find('K', symbol_position_w);
-								if (symbol_position == std::string::npos)
-								{
-									symbol_position = fen_saved.find('Q', symbol_position_w);
-								}
+								current_position.undo_move(Last_Move);
 
-								if (symbol_position != std::string::npos)
-								{
-									if (fen_saved.at(symbol_position) == 'K')
-									{
-										fen_saved.erase(symbol_position, 1);
-									}
-								}
+								std::cout << "Position is not ok" << std::endl;
 
-								symbol_position = fen_saved.find('Q', symbol_position_w);
-								if (symbol_position != std::string::npos)
-								{
-									if (fen_saved.at(symbol_position) == 'Q')
-									{
-										fen_saved.erase(symbol_position, 1);
-									}
-								}
+								continue;
 							}
-							else
-							{
-								if (current_position.side_to_move() == BLACK)
-								{
-									size_t symbol_position_b;
-									size_t symbol_position;
-									symbol_position_b = fen_saved.find(' ');
-									assert(symbol_position_b != std::string::npos);
 
-									symbol_position = fen_saved.find('k', symbol_position_b);
+							current_position.undo_move(Last_Move);
+
+							if (type_of(Last_Move) == CASTLING)
+							{
+								if (current_position.side_to_move() == WHITE)
+								{
+									size_t symbol_position_w;
+									size_t symbol_position;
+									symbol_position_w = fen_saved.find(' ');
+									assert(symbol_position_w != std::string::npos);
+
+									symbol_position = fen_saved.find('K', symbol_position_w);
 									if (symbol_position == std::string::npos)
 									{
-										symbol_position = fen_saved.find('q', symbol_position_b);
+										symbol_position = fen_saved.find('Q', symbol_position_w);
 									}
 
 									if (symbol_position != std::string::npos)
 									{
-										if (fen_saved.at(symbol_position) == 'k')
+										if (fen_saved.at(symbol_position) == 'K')
 										{
 											fen_saved.erase(symbol_position, 1);
 										}
 									}
 
-									symbol_position = fen_saved.find('q', symbol_position_b);
+									symbol_position = fen_saved.find('Q', symbol_position_w);
 									if (symbol_position != std::string::npos)
 									{
-										if (fen_saved.at(symbol_position) == 'q')
+										if (fen_saved.at(symbol_position) == 'Q')
 										{
 											fen_saved.erase(symbol_position, 1);
 										}
@@ -579,26 +564,61 @@ void MachineLearningControl::learning_thread_function()
 								}
 								else
 								{
-									assert(false);
+									if (current_position.side_to_move() == BLACK)
+									{
+										size_t symbol_position_b;
+										size_t symbol_position;
+										symbol_position_b = fen_saved.find(' ');
+										assert(symbol_position_b != std::string::npos);
+
+										symbol_position = fen_saved.find('k', symbol_position_b);
+										if (symbol_position == std::string::npos)
+										{
+											symbol_position = fen_saved.find('q', symbol_position_b);
+										}
+
+										if (symbol_position != std::string::npos)
+										{
+											if (fen_saved.at(symbol_position) == 'k')
+											{
+												fen_saved.erase(symbol_position, 1);
+											}
+										}
+
+										symbol_position = fen_saved.find('q', symbol_position_b);
+										if (symbol_position != std::string::npos)
+										{
+											if (fen_saved.at(symbol_position) == 'q')
+											{
+												fen_saved.erase(symbol_position, 1);
+											}
+										}
+									}
+									else
+									{
+										assert(false);
+									}
 								}
 							}
 						}
-					}
-					else
-					{
-						//std::cout << "Game over" << std::endl;
+						else
+						{
+							//std::cout << "Game over" << std::endl;
+						}
 					}
 
 					current_game_simulation_limits.time[us] -= int(now() - limits.startTime);
 				}
 
-				if (SaveData() == 1)
+				int local_save_data_result = SaveData();
+
+				if (local_save_data_result == 1)
 				{
 					assert(false);
 				}
 				else
 				{
-					if (SaveData() == 0)
+					if (local_save_data_result == 0)
 					{
 						ClearData();
 					}
@@ -854,7 +874,7 @@ void MachineLearningControl::learning_thread_function()
 				}
 				///*/
 
-				//ClearData();
+				ClearData();
 			}
 			{
 				std::string input_stream_data_best_moves;
@@ -928,12 +948,18 @@ void MachineLearningControl::learning_thread_function()
 		learning_in_progress = false;
 
 		current_position_set = false;
+
+		learning_in_progress_object = false;
 	}
+
+	learning_in_progress_object = false;
 }
 
 void MachineLearningControl::LearningExit()
 {
 	learning_exit = true;
+
+	infinite_learning_exit = true;
 }
 
 void MachineLearningControl::LearningRoundFinished()
@@ -1027,22 +1053,33 @@ void MachineLearningControl::infinite_learning_thread_function()
 {
 	while (!infinite_learning_exit)
 	{
-		while (!infinite_start)
+		while (!infinite_start && !infinite_learning_exit)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 
-		Search::LimitsType start_limit;
-		start_limit.time[WHITE] = current_limit.time[WHITE];
-		start_limit.time[BLACK] = current_limit.time[BLACK];
+		if (infinite_learning_exit)
+		{
+			continue;
+		}
 
-		do
+		Search::LimitsType start_limit;
+		start_limit.time[WHITE] = 60 * 1000;//current_limit.time[WHITE];	//	Starting limit is 1 minute. Then time for simulation in infinite mode doubles.
+		start_limit.time[BLACK] = 60 * 1000;//current_limit.time[BLACK];	//	Starting limit is 1 minute. Then time for simulation in infinite mode doubles.
+
+		while (!infinite_stop && !infinite_learning_exit)
 		{
 			infinite_analysis_in_progress = true;
-			if (!learning_in_progress && learning_round_finished)
+			if (!learning_in_progress && learning_round_finished && !infinite_stop)
 			{
-				start_limit.time[WHITE] *= 2;
-				start_limit.time[BLACK] *= 2;
+				if (start_limit.time[WHITE] <= 4 * 3600 * 1000)
+				{
+					start_limit.time[WHITE] *= 2;
+				}
+				if (start_limit.time[BLACK] <= 4 * 3600 * 1000)
+				{
+					start_limit.time[BLACK] *= 2;
+				}
 
 				Search::LimitsType current_limit = start_limit;
 
@@ -1057,7 +1094,7 @@ void MachineLearningControl::infinite_learning_thread_function()
 				Threads.main()->wait_for_search_finished();
 			}
 			infinite_analysis_in_progress = false;
-		} while (!infinite_stop && !infinite_learning_exit);
+		} 
 
 		infinite_start = false;
 	}

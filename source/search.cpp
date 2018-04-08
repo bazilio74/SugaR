@@ -354,7 +354,7 @@ finalize:
 
   MachineLearningControlMain.Answer(bestThread->rootMoves[0].pv[0], rootPos.is_chess960());
 
-  if (!MachineLearningControlMain.IsSimulatingInProgress() && !MachineLearningControlMain.IsInfiniteAnalysisInProgress())
+  if ((!MachineLearningControlMain.IsSimulatingInProgress() && !MachineLearningControlMain.IsInfiniteAnalysisInProgress()))
   {
 	  sync_cout << "bestmove " << UCI::move(bestThread->rootMoves[0].pv[0], rootPos.is_chess960());
 
