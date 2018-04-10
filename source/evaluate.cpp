@@ -171,7 +171,7 @@ namespace {
   // KingProtector[PieceType-2] contains a penalty according to distance from king
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
 
- // Assorted bonuses and penalties
+  // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  8, 12);
   constexpr Score CloseEnemies       = S(  7,  0);
   constexpr Score Connectivity       = S(  3,  1);
@@ -181,6 +181,7 @@ namespace {
   constexpr Score KnightOnQueen      = S( 21, 11);
   constexpr Score LongDiagonalBishop = S( 22,  0);
   constexpr Score MinorBehindPawn    = S( 16,  0);
+  constexpr Score Overload           = S( 10,  5);
   constexpr Score PawnlessFlank      = S( 20, 80);
   constexpr Score RookOnPawn         = S(  8, 24);
   constexpr Score SliderOnQueen      = S( 42, 21);
@@ -310,7 +311,7 @@ namespace {
     Bitboard b, bb;
     Square s;
     Score score = SCORE_ZERO;
-	int mob;
+    int mob;
 
     attackedBy[Us][Pt] = 0;
 
@@ -336,7 +337,7 @@ namespace {
         }
 
         mob = (Pt == KNIGHT || Pt == BISHOP) ? popcount(b & mobilityArea[Us] & ~pos.pieces(Us, QUEEN))
-		                                     : popcount(b & mobilityArea[Us]);
+                                             : popcount(b & mobilityArea[Us]);
 
         mobility[Us] += MobilityBonus[Pt - 2][mob];
 
@@ -530,7 +531,7 @@ namespace {
     Bitboard b, weak, defended, nonPawnEnemies, stronglyProtected, safeThreats;
     Score score = SCORE_ZERO;
 
-    // Non-pawn enemies attacked by a pawn
+    // Non-pawn enemies
     nonPawnEnemies = pos.pieces(Them) ^ pos.pieces(Them, PAWN);
 
     // Our safe or protected pawns
@@ -617,6 +618,12 @@ namespace {
     // Connectivity: ensure that knights, bishops, rooks, and queens are protected
     b = (pos.pieces(Us) ^ pos.pieces(Us, PAWN, KING)) & attackedBy[Us][ALL_PIECES];
     score += Connectivity * popcount(b);
+
+    // Bonus for overload (non-pawn enemies attacked and defended exactly once)
+    b =  nonPawnEnemies
+       & attackedBy[Us][ALL_PIECES]   & ~attackedBy2[Us]
+       & attackedBy[Them][ALL_PIECES] & ~attackedBy2[Them];
+    score += Overload * popcount(b);
 
     if (T)
         Trace::add(THREAT, Us, score);
