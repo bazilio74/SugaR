@@ -171,6 +171,18 @@ namespace {
   // KingProtector[PieceType-2] contains a penalty according to distance from king
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
 
+  //  Knight Scores
+  constexpr Score KnightScores[RANK_NB][FILE_NB] = {
+		{ S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00) },
+		{ S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00) },
+		{ S(00, 00), S(00, 00), S(10, 10), S(10, 10), S(10, 10), S(10, 10), S(00, 00), S(00, 00) },
+		{ S(00, 00), S(00, 00), S(10, 10), S(20, 20), S(20, 20), S(10, 10), S(00, 00), S(00, 00) },
+		{ S(00, 00), S(00, 00), S(10, 10), S(25, 25), S(25, 25), S(10, 10), S(00, 00), S(00, 00) },
+		{ S(00, 00), S(00, 00), S(20, 20), S(30, 30), S(30, 30), S(20, 20), S(00, 00), S(00, 00) },
+		{ S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00) },
+		{ S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00), S(00, 00) },
+  };
+
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  8, 12);
   constexpr Score CloseEnemies       = S(  7,  0);
@@ -382,6 +394,30 @@ namespace {
                             : pos.piece_on(s + d + d) == make_piece(Us, PAWN) ? CorneredBishop * 2
                                                                               : CorneredBishop;
             }
+
+			if (Pt == KNIGHT)
+			{
+				if (pos.piece_on(s) == make_piece(Us, KNIGHT))
+				{
+					int rank = rank_of(s);
+					int file = file_of(s);
+					if (Us == WHITE)
+					{
+						score += KnightScores[rank][file];
+					}
+					else
+					{
+						if (Us == BLACK)
+						{
+							score += KnightScores[RANK_NB - 1 -rank][file];
+						}
+						else
+						{
+							assert(false);
+						}
+					}
+				}
+			}
         }
 
         if (Pt == ROOK)
