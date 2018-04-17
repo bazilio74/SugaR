@@ -171,6 +171,26 @@ namespace {
   // KingProtector[PieceType-2] contains a penalty according to distance from king
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
 
+  //  Knight Scores
+  constexpr Score KnightScores[RANK_NB][FILE_NB] = {
+		{ S(-25, -25), S(-15, -15), S(-10, -10), S(-10, -10), S(-10, -10), S(-10, -10), S(-15, -15), S(-25, -25) },
+		{ S(-15, -15), S(-05, -05), S(+00, +00), S(+00, +00), S(+00, +00), S(+00, +00), S(-05, -05), S(-15, -15) },
+		{ S(-10, -10), S(+00, +00), S(+10, +10), S(+10, +10), S(+10, +10), S(+10, +10), S(+00, +00), S(-10, -10) },
+		{ S(-10, -10), S(+00, +00), S(+10, +10), S(+25, +25), S(+25, +25), S(+10, +10), S(+00, +00), S(-10, -10) },
+		{ S(-10, -10), S(+00, +00), S(+20, +20), S(+30, +30), S(+30, +30), S(+20, +20), S(+00, +00), S(-10, -10) },
+		{ S(-10, -10), S(+00, +00), S(+15, +15), S(+20, +20), S(+20, +20), S(+15, +15), S(+00, +00), S(-10, -10) },
+		{ S(-15, -15), S(+00, +00), S(+00, +00), S(+00, +00), S(+00, +00), S(+00, +00), S(+00, +00), S(-15, -15) },
+		{ S(-20, -20), S(-05, -05), S(-05, -05), S(-05, -05), S(-05, -05), S(-05, -05), S(-05, -05), S(-20, -20) },
+  };
+  //	Pawn for Knight Scores advantage compensation
+  constexpr Score PawnScores = S(+04, +06);
+  //	Bishop for Knight Scores advantage compensation
+  constexpr Score BishopScores = S(+20, +10);
+  //	Rook for Knight Scores advantage compensation
+  constexpr Score RookScores = S(+10, +30);
+  //	Queen for Knight Scores advantage compensation
+  constexpr Score QueenScores = S(+20, +60);
+
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  8, 12);
   constexpr Score CloseEnemies       = S(  7,  0);
@@ -367,6 +387,11 @@ namespace {
                 // Bonus for bishop on a long diagonal which can "see" both center squares
                 if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
                     score += LongDiagonalBishop;
+
+				if (pos.piece_on(s) == make_piece(Us, BISHOP))
+				{
+					score += BishopScores;
+				}
             }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
@@ -382,6 +407,30 @@ namespace {
                             : pos.piece_on(s + d + d) == make_piece(Us, PAWN) ? CorneredBishop * 2
                                                                               : CorneredBishop;
             }
+
+			if (Pt == KNIGHT)
+			{
+				if (pos.piece_on(s) == make_piece(Us, KNIGHT))
+				{
+					int rank = rank_of(s);
+					int file = file_of(s);
+					if (Us == WHITE)
+					{
+						score += KnightScores[rank][file];
+					}
+					else
+					{
+						if (Us == BLACK)
+						{
+							score += KnightScores[RANK_NB - 1 -rank][file];
+						}
+						else
+						{
+							assert(false);
+						}
+					}
+				}
+			}
         }
 
         if (Pt == ROOK)
@@ -401,6 +450,11 @@ namespace {
                 if ((kf < FILE_E) == (file_of(s) < kf))
                     score -= (TrappedRook - make_score(mob * 22, 0)) * (1 + !pos.can_castle(Us));
             }
+
+			if (pos.piece_on(s) == make_piece(Us, ROOK))
+			{
+				score += RookScores;
+			}
         }
 
         if (Pt == QUEEN)
@@ -409,6 +463,11 @@ namespace {
             Bitboard queenPinners;
             if (pos.slider_blockers(pos.pieces(Them, ROOK, BISHOP), s, queenPinners))
                 score -= WeakQueen;
+
+			if (pos.piece_on(s) == make_piece(Us, QUEEN))
+			{
+				score += QueenScores;
+			}
         }
     }
     if (T)
@@ -861,6 +920,8 @@ namespace {
     // Probe the pawn hash table
     pe = Pawns::probe(pos);
     score += pe->pawn_score(WHITE) - pe->pawn_score(BLACK);
+
+	score += PawnScores * pos.count<PAWN>(WHITE) - PawnScores * pos.count<PAWN>(BLACK);
 
     // Early exit if score is high
     Value v = (mg_value(score) + eg_value(score)) / 2;
