@@ -37,6 +37,10 @@ namespace {
   // Backward pawn penalty
   constexpr Score Backward = S(24, 12);
 
+
+  //  Pawn Scores Isolated in Rank 3
+  constexpr Score PawnScoresIsolatedRank3 = S(-40, -10);
+
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
 
@@ -168,8 +172,15 @@ namespace {
         if (supported | phalanx)
             score += Connected[opposed][bool(phalanx)][popcount(supported)][relative_rank(Us, s)];
 
-        else if (!neighbours)
-            score -= Isolated, e->weakUnopposed[Us] += !opposed;
+		else if (!neighbours)
+		{
+			score -= Isolated, e->weakUnopposed[Us] += !opposed;
+
+			if (relative_rank(Us, s) == RANK_3)
+			{
+				score += PawnScoresIsolatedRank3;
+			}
+		}
 
         else if (backward)
             score -= Backward, e->weakUnopposed[Us] += !opposed;
