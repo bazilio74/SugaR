@@ -41,6 +41,9 @@ namespace {
   //  Pawn Scores Isolated in Rank 3
   constexpr Score PawnScoresIsolatedRank3 = S(-40, -10);
 
+  //  Pawn Scores Connected Passed
+  constexpr Score PawnScoresConnectedPassed = S(+40, +10);
+
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
 
@@ -187,6 +190,45 @@ namespace {
 
         if (doubled && !supported)
             score -= Doubled;
+
+		File f0 = f;
+		//File f1 = f;
+
+		if (f0 > FILE_A)
+		{
+			f0 = File(f0 - 1);
+		}
+
+		if (f0 != f)
+		{
+			bool passed0 = false;
+			bool passed1 = bool(passed_pawn_mask(Us, s) & ourPawns);
+
+			for (Rank r0 = RANK_2; r0 <= RANK_7; r0 = Rank(r0+1))
+			{
+				Square s0 = make_square(f0, r0);
+
+				if (pos.piece_on(s0) == make_piece(Us, PAWN))
+				{
+
+					if (
+						!((theirPawns & passed_pawn_mask(Us, s0)) ^ (theirPawns & PawnAttacks[Us][s0]) ^ (theirPawns & PawnAttacks[Us][s0 + Up]))
+						&& !(ourPawns & forward_file_bb(Us, s0))
+						&& popcount(ourPawns   & adjacent_files_bb(f0) & rank_bb(s0 - Up)) >= popcount(theirPawns & PawnAttacks[Us][s0]) - 1
+						&& popcount(ourPawns   & adjacent_files_bb(f0) & rank_bb(s0)) >= popcount(theirPawns & PawnAttacks[Us][s0 + Up])
+						)
+					{
+						passed0 = true;
+						break;
+					}
+				}
+			}
+
+			if (passed0 && passed1)
+			{
+				score += PawnScoresConnectedPassed;
+			}
+		}
     }
 
     return score;
