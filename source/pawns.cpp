@@ -204,29 +204,32 @@ namespace {
 			bool passed0 = false;
 			bool passed1 = bool(passed_pawn_mask(Us, s) & ourPawns);
 
-			for (Rank r0 = RANK_2; r0 <= RANK_7; r0 = Rank(r0+1))
+			if (passed1)
 			{
-				Square s0 = make_square(f0, r0);
-
-				if (pos.piece_on(s0) == make_piece(Us, PAWN))
+				for (Rank r0 = RANK_2; r0 <= RANK_7; r0 = Rank(r0 + 1))
 				{
+					Square s0 = make_square(f0, r0);
 
-					if (
-						!((theirPawns & passed_pawn_mask(Us, s0)) ^ (theirPawns & PawnAttacks[Us][s0]) ^ (theirPawns & PawnAttacks[Us][s0 + Up]))
-						&& !(ourPawns & forward_file_bb(Us, s0))
-						&& popcount(ourPawns   & adjacent_files_bb(f0) & rank_bb(s0 - Up)) >= popcount(theirPawns & PawnAttacks[Us][s0]) - 1
-						&& popcount(ourPawns   & adjacent_files_bb(f0) & rank_bb(s0)) >= popcount(theirPawns & PawnAttacks[Us][s0 + Up])
-						)
+					if (pos.piece_on(s0) == make_piece(Us, PAWN))
 					{
-						passed0 = true;
-						break;
+
+						if (
+							!((theirPawns & passed_pawn_mask(Us, s0)) ^ (theirPawns & PawnAttacks[Us][s0]) ^ (theirPawns & PawnAttacks[Us][s0 + Up]))
+							&& !(ourPawns & forward_file_bb(Us, s0))
+							&& popcount(ourPawns   & adjacent_files_bb(f0) & rank_bb(s0 - Up)) >= popcount(theirPawns & PawnAttacks[Us][s0]) - 1
+							&& popcount(ourPawns   & adjacent_files_bb(f0) & rank_bb(s0)) >= popcount(theirPawns & PawnAttacks[Us][s0 + Up])
+							)
+						{
+							passed0 = true;
+							break;
+						}
 					}
 				}
-			}
 
-			if (passed0 && passed1)
-			{
-				score += PawnScoresConnectedPassed;
+				if (passed0 && passed1)
+				{
+					score += PawnScoresConnectedPassed;
+				}
 			}
 		}
     }
