@@ -43,6 +43,7 @@ namespace {
 
   //  Pawn Scores Connected Passed
   constexpr Score PawnScoresConnectedPassed = S(+40, +10);
+  constexpr Score KingSafetyCompemsationPawnScoresConnectedPassed = S(-20, +00);
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
@@ -229,6 +230,34 @@ namespace {
 				if (passed0 && passed1)
 				{
 					score += PawnScoresConnectedPassed;
+
+					Square UsKingSquare = SQ_A1;
+
+					Piece UsKing = make_piece(Us, KING);
+
+					while (pos.piece_on(UsKingSquare) != UsKing)
+					{
+						UsKingSquare = Square(UsKingSquare+1);
+
+						assert(KingSquare == SQUARE_NB);
+					}
+
+					File UsKingFile = file_of(UsKingSquare);
+					//Rank UsKingRank = rank_of(UsKingSquare);
+
+					File f2 = f;
+
+					if (f < FILE_H)
+					{
+						f2 = File(f2 - 1);
+					}
+
+					bool connected_passed_defend_king = (UsKingFile >= f0 && UsKingFile <= f2);
+					
+					if (connected_passed_defend_king)
+					{
+						score += KingSafetyCompemsationPawnScoresConnectedPassed;
+					}
 				}
 			}
 		}
