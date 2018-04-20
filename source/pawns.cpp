@@ -44,6 +44,8 @@ namespace {
   //  Pawn Scores Connected Passed
   constexpr Score PawnScoresConnectedPassed = S(+40, +10);
   constexpr Score KingSafetyCompemsationPawnScoresConnectedPassed = S(-20, +00);
+  //	To do: add danger enemy to get protected passed pawn in the center
+  constexpr Score ProtectedPassedPawn = S(40, 40);
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
@@ -193,17 +195,23 @@ namespace {
             score -= Doubled;
 
 		File f0 = f;
-		//File f1 = f;
+		File f2 = f;
 
 		if (f0 > FILE_A)
 		{
 			f0 = File(f0 - 1);
 		}
 
+		if (f < FILE_H)
+		{
+			f2 = File(f2 + 1);
+		}
+
+		bool passed1 = bool(passed_pawn_mask(Us, s) & ourPawns);
+
 		if (f0 != f)
 		{
 			bool passed0 = false;
-			bool passed1 = bool(passed_pawn_mask(Us, s) & ourPawns);
 
 			if (passed1)
 			{
@@ -245,13 +253,6 @@ namespace {
 					File UsKingFile = file_of(UsKingSquare);
 					//Rank UsKingRank = rank_of(UsKingSquare);
 
-					File f2 = f;
-
-					if (f < FILE_H)
-					{
-						f2 = File(f2 - 1);
-					}
-
 					bool connected_passed_defend_king = (UsKingFile >= f0 && UsKingFile <= f2);
 					
 					if (connected_passed_defend_king)
@@ -259,6 +260,50 @@ namespace {
 						score += KingSafetyCompemsationPawnScoresConnectedPassed;
 					}
 				}
+			}
+		}
+
+		bool protected_passed_pawn = false;
+
+		File fp0 = file_of(s);
+		Rank rp0 = rank_of(s);
+
+		Rank rpp = rp0;
+
+		if (Us == WHITE)
+		{
+			if (rpp > RANK_2)
+			{
+				rpp = Rank(rpp - 1);
+			}
+		}
+		else
+		{
+			if (rpp < RANK_7)
+			{
+				rpp = Rank(rpp + 1);
+			}
+			else
+			{
+				assert(false);
+			}
+		}
+
+		if (rpp != rp0)
+		{
+			if (f0 != f)
+			{
+				protected_passed_pawn = make_piece(Us, PAWN) == pos.piece_on(make_square(f0, rpp));
+			}
+
+			if (f2 != f)
+			{
+				protected_passed_pawn = protected_passed_pawn || (make_piece(Us, PAWN) == pos.piece_on(make_square(f2, rpp)));
+			}
+
+			if (passed1 && protected_passed_pawn)
+			{
+				score += ProtectedPassedPawn;
 			}
 		}
     }

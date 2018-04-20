@@ -203,7 +203,7 @@ namespace {
 		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
 		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
   };
-    //	To do: add danger enemy to get protected passed pawn in the center
+
 
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  8, 12);
