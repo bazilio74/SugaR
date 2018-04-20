@@ -265,10 +265,23 @@ namespace {
 
 		bool protected_passed_pawn = false;
 
-		File fp0 = file_of(s);
-		Rank rp0 = rank_of(s);
+		//File fp1 = file_of(s);
+		Rank rp1 = rank_of(s);
 
-		Rank rpp = rp0;
+		File fp0 = f;
+		File fp2 = f;
+
+		if (fp0 > FILE_A)
+		{
+			fp0 = File(fp0 - 1);
+		}
+
+		if (f < FILE_H)
+		{
+			fp2 = File(fp2 + 1);
+		}
+
+		Rank rpp = rp1;
 
 		if (Us == WHITE)
 		{
@@ -289,16 +302,16 @@ namespace {
 			}
 		}
 
-		if (rpp != rp0)
+		if (rpp != rp1)
 		{
-			if (f0 != f)
+			if (fp0 != f)
 			{
-				protected_passed_pawn = make_piece(Us, PAWN) == pos.piece_on(make_square(f0, rpp));
+				protected_passed_pawn = make_piece(Us, PAWN) == pos.piece_on(make_square(fp0, rpp));
 			}
 
-			if (f2 != f)
+			if (fp2 != f)
 			{
-				protected_passed_pawn = protected_passed_pawn || (make_piece(Us, PAWN) == pos.piece_on(make_square(f2, rpp)));
+				protected_passed_pawn = protected_passed_pawn || (make_piece(Us, PAWN) == pos.piece_on(make_square(fp2, rpp)));
 			}
 
 			if (passed1 && protected_passed_pawn)
