@@ -39,7 +39,7 @@ namespace {
 
 
   //  Pawn Scores Isolated in Rank 3
-  constexpr Score PawnScoresIsolatedRank3 = S(-40, -10);
+  constexpr Score PawnScoresIsolatedRank3 = S(-20, +00);
 
   //  Pawn Scores Connected Passed
   constexpr Score PawnScoresConnectedPassed = S(+40, +10);
