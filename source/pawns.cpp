@@ -44,7 +44,7 @@ namespace {
   //  Pawn Scores Connected Passed
   constexpr Score PawnScoresConnectedPassed = S(+30, +10);
   constexpr Score KingSafetyCompemsationPawnScoresConnectedPassed = S(-10, +00);
-  //	To do: add danger enemy to get protected passed pawn in the center
+  //	Protected Passed Pawn
   constexpr Score ProtectedPassedPawn = S(20, 20);
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
