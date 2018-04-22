@@ -45,7 +45,7 @@ namespace {
   constexpr Score PawnScoresConnectedPassed = S(+30, +10);
   constexpr Score KingSafetyCompemsationPawnScoresConnectedPassed = S(-10, +00);
   //	Protected Passed Pawn
-  constexpr Score ProtectedPassedPawn = S(20, 20);
+  constexpr Score ProtectedPassedPawn = S(+10, +10);
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
