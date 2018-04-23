@@ -42,7 +42,7 @@ namespace {
   constexpr Score PawnScoresIsolatedRank3 = S(-10, +00);
 
   //  Pawn Scores Connected Passed
-  constexpr Score PawnScoresConnectedPassed = S(+25, +10);
+  constexpr Score PawnScoresConnectedPassed = S(+25, +25);
   constexpr Score KingSafetyCompemsationPawnScoresConnectedPassed = S(-10, +00);
   //	Protected Passed Pawn
   constexpr Score ProtectedPassedPawn = S(+10, +10);
