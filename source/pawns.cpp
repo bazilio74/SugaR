@@ -38,13 +38,13 @@ namespace {
   constexpr Score Backward = S(24, 12);
   
 	//  Pawn Scores Isolated in Rank 3
-	constexpr Score PawnScoresIsolatedRank3 = S(-10, +00);
+	constexpr Score PawnScoresIsolatedRank3 = S(-05, +00);
 
 	//  Pawn Scores Connected Passed
-	constexpr Score PawnScoresConnectedPassed = S(+25, +25);
-	constexpr Score KingSafetyCompemsationPawnScoresConnectedPassed = S(-10, +00);
+	constexpr Score PawnScoresConnectedPassed = S(+16, +16);
+	constexpr Score KingSafetyCompemsationPawnScoresConnectedPassed = S(-05, +00);
 	//	Protected Passed Pawn
-	constexpr Score ProtectedPassedPawn = S(+10, +10);
+	constexpr Score ProtectedPassedPawn = S(+05, +05);
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
