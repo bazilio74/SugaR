@@ -97,7 +97,7 @@ void init(OptionsMap& o) {
   o["Junior Passed"]				<< Option(true);
   o["Junior Space"]				<< Option(true);
   o["Junior Initiative"]			<< Option(true);
-  o["Shashin Strategy"]				<< Option(true);
+  o["Junior Strategy"]				<< Option(true);
   o["NeverClearHash"]           << Option(false);
   o["HashFile"]                 << Option("SugaR_hash.hsh", on_HashFile);
   o["SaveHashtoFile"]           << Option(SaveHashtoFile);
@@ -114,7 +114,6 @@ void init(OptionsMap& o) {
   o["NullMove"]                 << Option(true);
   o["Polyglot Book management"] << Option();
   o["OwnBook"]                  << Option(false);
-  o["Best Book Move"]           << Option(false);
   o["Book File"]                << Option("book.bin");
   o["Cerebellum Book Library"]  << Option();
   o["BookFile"]              << Option("Cerebellum_Light_Poly.bin", on_book_file);
