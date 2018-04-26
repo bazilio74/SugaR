@@ -197,9 +197,9 @@ namespace {
 		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
 		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
 		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
-		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+015, +000), S(+015, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
-		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+020, +000), S(+020, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
 		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+010, +000), S(+010, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
+		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+012, +000), S(+012, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
+		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+005, +000), S(+005, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
 		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
 		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
   };
@@ -990,13 +990,11 @@ namespace {
     initialize<BLACK>();
 
     // Pieces should be evaluated first (populate attack tables)
-	score += 
-		  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
+	score +=
+		pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
 		+ pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
 		+ pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
-		+ pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >()
-
-		+ pawn_center<WHITE>() - pawn_center<BLACK>();
+		+ pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
 	Value v_Junior_test = v;
 	
@@ -1050,6 +1048,8 @@ namespace {
 	{
 		score += initiative(eg_value(score));
 	}
+
+	score += pawn_center<WHITE>() - pawn_center<BLACK>();
 
     // Interpolate between a middlegame and a (scaled by 'sf') endgame score
     ScaleFactor sf = scale_factor(eg_value(score));
