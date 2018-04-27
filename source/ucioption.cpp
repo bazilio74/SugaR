@@ -97,7 +97,7 @@ void init(OptionsMap& o) {
   o["Junior Passed"]				<< Option(true);
   o["Junior Space"]				<< Option(true);
   o["Junior Initiative"]			<< Option(true);
-  o["Junior Strategy"]				<< Option(true);
+  o["Shashin Strategy"]				<< Option(true);
   o["NeverClearHash"]           << Option(false);
   o["HashFile"]                 << Option("SugaR_hash.hsh", on_HashFile);
   o["SaveHashtoFile"]           << Option(SaveHashtoFile);

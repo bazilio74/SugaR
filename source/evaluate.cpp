@@ -45,7 +45,11 @@ namespace Trace {
   enum Tracing { NO_TRACE, TRACE };
 
   enum Term { // The first 8 entries are reserved for PieceType
-    MATERIAL = 8, IMBALANCE, MOBILITY, THREAT, PASSED, SPACE, CENTER, INITIATIVE, TOTAL, TERM_NB
+    MATERIAL = 8, IMBALANCE, MOBILITY, THREAT, PASSED, SPACE,
+#ifdef PAWN_SCORES
+	CENTER, 
+#endif
+	INITIATIVE, TOTAL, TERM_NB
   };
 
   Score scores[TERM_NB][COLOR_NB];
@@ -191,7 +195,7 @@ namespace {
   //	Queen for Knight Scores advantage compensation
   constexpr Score QueenScores = S(+20, +60);
 
-
+#ifdef PAWN_SCORES
   //  Pawn Scores Board
   constexpr Score PawnScoresBoard[RANK_NB][FILE_NB] = {
 		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
@@ -203,7 +207,7 @@ namespace {
 		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
 		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
   };
-
+#endif
 
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  8, 12);
@@ -245,7 +249,9 @@ namespace {
     template<Color Us> Score threats() const;
     template<Color Us> Score passed() const;
     template<Color Us> Score space() const;
+#ifdef PAWN_SCORES
 	template<Color Us> Score pawn_center() const;
+#endif
     ScaleFactor scale_factor(Value eg) const;
     Score initiative(Value eg) const;
 
@@ -796,6 +802,8 @@ namespace {
     return score;
   }
 
+
+#ifdef PAWN_SCORES
   //	Pawn Center evaluation
 
   template<Tracing T> template<Color Us>
@@ -838,6 +846,7 @@ namespace {
 
 	  return score;
   }
+#endif
 
 
   // Evaluation::space() computes the space evaluation for a given side. The
@@ -1049,7 +1058,9 @@ namespace {
 		score += initiative(eg_value(score));
 	}
 
+#ifdef PAWN_SCORES
 	score += pawn_center<WHITE>() - pawn_center<BLACK>();
+#endif
 
     // Interpolate between a middlegame and a (scaled by 'sf') endgame score
     ScaleFactor sf = scale_factor(eg_value(score));

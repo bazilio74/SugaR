@@ -37,6 +37,7 @@ namespace {
   // Backward pawn penalty
   constexpr Score Backward = S(24, 12);
   
+#ifdef PAWN_SCORES
 	//  Pawn Scores Isolated in Rank 3
 	constexpr Score PawnScoresIsolatedRank3 = S(-05, +00);
 
@@ -45,6 +46,7 @@ namespace {
 	constexpr Score KingSafetyCompemsationPawnScoresConnectedPassed = S(-05, +00);
 	//	Protected Passed Pawn
 	constexpr Score ProtectedPassedPawn = S(+05, +05);
+#endif
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
@@ -177,10 +179,12 @@ namespace {
 			{
 				score -= Isolated, e->weakUnopposed[Us] += !opposed;
 
+#ifdef PAWN_SCORES
 				if (relative_rank(Us, s) == RANK_3)
 				{
 					score += PawnScoresIsolatedRank3;
 				}
+#endif
 			}
 
 			else if (backward)
@@ -189,7 +193,7 @@ namespace {
 			if (doubled && !supported)
 				score -= Doubled;
 
-
+#ifdef PAWN_SCORES
 			bool protected_passed_pawn = false;
 
 			bool passed1 = bool(passed_pawn_mask(Us, s) & ourPawns);
@@ -248,8 +252,10 @@ namespace {
 					score += ProtectedPassedPawn;
 				}
 			}
+#endif
 		}
 
+#ifdef PAWN_SCORES
 		const Square* pl_1 = pos.squares<PAWN>(Us);
 
 		// Loop through all pawns of the current color and score each pawn
@@ -323,6 +329,7 @@ namespace {
 				}
 			}
 		}
+#endif
 
 		return score;
 	}

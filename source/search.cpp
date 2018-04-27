@@ -248,7 +248,7 @@ void MainThread::search() {
   Options_Junior_Space = Options["Junior Space"];
   Options_Junior_Initiative = Options["Junior Initiative"];
 
-  Options_Junior_Strategy = Options["Junior Strategy"];
+  Options_Junior_Strategy = Options["Shashin Strategy"];
  
   if (rootMoves.empty())
   {
