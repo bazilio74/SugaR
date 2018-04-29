@@ -26,6 +26,8 @@
 #include "position.h"
 #include "thread.h"
 
+#define PAWN_SCORES
+
 namespace {
 
   #define V Value
@@ -42,8 +44,8 @@ namespace {
 	constexpr Score PawnScoresIsolatedRank3 = S(-05, +00);
 
 	//  Pawn Scores Connected Passed
-	constexpr Score PawnScoresConnectedPassed = S(+16, +16);
-	constexpr Score KingSafetyCompemsationPawnScoresConnectedPassed = S(-05, +00);
+	constexpr Score PawnScoresConnectedPassed = S(-16, +16);
+	constexpr Score KingSafetyCompensationPawnScoresConnectedPassed = S(-05, +00);
 	//	Protected Passed Pawn
 	constexpr Score ProtectedPassedPawn = S(+05, +05);
 #endif
@@ -323,7 +325,7 @@ namespace {
 
 						if (connected_passed_defend_king)
 						{
-							score += KingSafetyCompemsationPawnScoresConnectedPassed;
+							score += KingSafetyCompensationPawnScoresConnectedPassed;
 						}
 					}
 				}

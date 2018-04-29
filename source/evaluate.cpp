@@ -40,6 +40,8 @@ extern bool Options_Junior_Space;
 extern bool Options_Junior_Initiative;
 extern bool Options_Junior_Strategy;
 
+#define PAWN_SCORES
+
 namespace Trace {
 
   enum Tracing { NO_TRACE, TRACE };
