@@ -26,6 +26,8 @@
 #include "position.h"
 #include "thread.h"
 
+#define PAWN_SCORES
+
 namespace {
 
   #define V Value
@@ -36,6 +38,17 @@ namespace {
 
   // Backward pawn penalty
   constexpr Score Backward = S(24, 12);
+  
+#ifdef PAWN_SCORES
+	//  Pawn Scores Isolated in Rank 3
+	constexpr Score PawnScoresIsolatedRank3 = S(-05, +00);
+
+	//  Pawn Scores Connected Passed
+	constexpr Score PawnScoresConnectedPassed = S(-16, +16);
+	constexpr Score KingSafetyCompensationPawnScoresConnectedPassed = S(-05, +00);
+	//	Protected Passed Pawn
+	constexpr Score ProtectedPassedPawn = S(+05, +05);
+#endif
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
   Score Connected[2][2][3][RANK_NB];
@@ -161,65 +174,211 @@ namespace {
             score += Connected[opposed][bool(phalanx)][popcount(supported)][relative_rank(Us, s)];
 
         else if (!neighbours)
-            score -= Isolated, e->weakUnopposed[Us] += !opposed;
+			{
+				score -= Isolated, e->weakUnopposed[Us] += !opposed;
 
-        else if (backward)
-            score -= Backward, e->weakUnopposed[Us] += !opposed;
+#ifdef PAWN_SCORES
+				if (relative_rank(Us, s) == RANK_3)
+				{
+					score += PawnScoresIsolatedRank3;
+				}
+#endif
+			}
 
-        if (doubled && !supported)
-            score -= Doubled;
-    }
+			else if (backward)
+				score -= Backward, e->weakUnopposed[Us] += !opposed;
 
-    return score;
-  }
+			if (doubled && !supported)
+				score -= Doubled;
 
+#ifdef PAWN_SCORES
+			bool protected_passed_pawn = false;
+
+			bool passed1 = bool(passed_pawn_mask(Us, s) & ourPawns);
+
+			//File fp1 = file_of(s);
+			Rank rp1 = rank_of(s);
+
+			File fp0 = f;
+			File fp2 = f;
+
+			if (fp0 > FILE_A)
+			{
+				fp0 = File(fp0 - 1);
+			}
+
+			if (f < FILE_H)
+			{
+				fp2 = File(fp2 + 1);
+			}
+
+			Rank rpp = rp1;
+
+			if (Us == WHITE)
+			{
+				if (rpp > RANK_2)
+				{
+					rpp = Rank(rpp - 1);
+				}
+			}
+			else
+			{
+				if (rpp < RANK_7)
+				{
+					rpp = Rank(rpp + 1);
+				}
+				else
+				{
+					assert(false);
+				}
+			}
+
+			if (rpp != rp1)
+			{
+				if (fp0 != f)
+				{
+					protected_passed_pawn = make_piece(Us, PAWN) == pos.piece_on(make_square(fp0, rpp));
+				}
+
+				if (fp2 != f)
+				{
+					protected_passed_pawn = protected_passed_pawn || (make_piece(Us, PAWN) == pos.piece_on(make_square(fp2, rpp)));
+				}
+
+				if (passed1 && protected_passed_pawn)
+				{
+					score += ProtectedPassedPawn;
+				}
+			}
+#endif
+		}
+
+#ifdef PAWN_SCORES
+		const Square* pl_1 = pos.squares<PAWN>(Us);
+
+		// Loop through all pawns of the current color and score each pawn
+		while ((s = *pl_1++) != SQ_NONE)
+		{
+			assert(pos.piece_on(s) == make_piece(Us, PAWN));
+
+			File f = file_of(s);
+
+			File f0 = f;
+			File f2 = f;
+
+			if (f0 > FILE_A)
+			{
+				f0 = File(f0 - 1);
+			}
+
+			if (f < FILE_H)
+			{
+				f2 = File(f2 + 1);
+			}
+
+			bool passed1 = bool(passed_pawn_mask(Us, s) & ourPawns);
+
+			if (f0 != f)
+			{
+				bool passed0 = false;
+
+				if (passed1)
+				{
+					for (Rank r0 = RANK_2; r0 <= RANK_7; r0 = Rank(r0 + 1))
+					{
+						Square s0 = make_square(f0, r0);
+
+						if (pos.piece_on(s0) == make_piece(Us, PAWN))
+						{
+							passed0 = e->passedPawns[Us] & s0;
+
+							if (passed0)
+							{
+								break;
+							}
+						}
+					}
+
+					if (passed0 && passed1)
+					{
+						score += PawnScoresConnectedPassed;
+
+						Square UsKingSquare = SQ_A1;
+
+						Piece UsKing = make_piece(Us, KING);
+
+						while (pos.piece_on(UsKingSquare) != UsKing)
+						{
+							UsKingSquare = Square(UsKingSquare + 1);
+
+							assert(UsKingSquare != SQUARE_NB);
+						}
+
+						File UsKingFile = file_of(UsKingSquare);
+						//Rank UsKingRank = rank_of(UsKingSquare);
+
+						bool connected_passed_defend_king = (UsKingFile >= f0 && UsKingFile <= f2);
+
+						if (connected_passed_defend_king)
+						{
+							score += KingSafetyCompensationPawnScoresConnectedPassed;
+						}
+					}
+				}
+			}
+		}
+#endif
+
+		return score;
+	}
 } // namespace
 
 namespace Pawns {
 
-/// Pawns::init() initializes some tables needed by evaluation. Instead of using
-/// hard-coded tables, when makes sense, we prefer to calculate them with a formula
-/// to reduce independent parameters and to allow easier tuning and better insight.
+	/// Pawns::init() initializes some tables needed by evaluation. Instead of using
+	/// hard-coded tables, when makes sense, we prefer to calculate them with a formula
+	/// to reduce independent parameters and to allow easier tuning and better insight.
 
-void init() {
+	void init() {
 
-  static constexpr int Seed[RANK_NB] = { 0, 13, 24, 18, 76, 100, 175, 330 };
+		static constexpr int Seed[RANK_NB] = { 0, 13, 24, 18, 76, 100, 175, 330 };
 
-  for (int opposed = 0; opposed <= 1; ++opposed)
-      for (int phalanx = 0; phalanx <= 1; ++phalanx)
-          for (int support = 0; support <= 2; ++support)
-              for (Rank r = RANK_2; r < RANK_8; ++r)
-  {
-      int v = 17 * support;
-      v += (Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0)) >> opposed;
+		for (int opposed = 0; opposed <= 1; ++opposed)
+			for (int phalanx = 0; phalanx <= 1; ++phalanx)
+				for (int support = 0; support <= 2; ++support)
+					for (Rank r = RANK_2; r < RANK_8; ++r)
+					{
+						int v = 17 * support;
+						v += (Seed[r] + (phalanx ? (Seed[r + 1] - Seed[r]) / 2 : 0)) >> opposed;
 
-      Connected[opposed][phalanx][support][r] = make_score(v, v * (r - 2) / 4);
-  }
-}
+						Connected[opposed][phalanx][support][r] = make_score(v, v * (r - 2) / 4);
+					}
+	}
 
 
-/// Pawns::probe() looks up the current position's pawns configuration in
-/// the pawns hash table. It returns a pointer to the Entry if the position
-/// is found. Otherwise a new Entry is computed and stored there, so we don't
-/// have to recompute all when the same pawns configuration occurs again.
+	/// Pawns::probe() looks up the current position's pawns configuration in
+	/// the pawns hash table. It returns a pointer to the Entry if the position
+	/// is found. Otherwise a new Entry is computed and stored there, so we don't
+	/// have to recompute all when the same pawns configuration occurs again.
 
-Entry* probe(const Position& pos) {
+	Entry* probe(const Position& pos) {
 
-  Key key = pos.pawn_key();
-  Entry* e = pos.this_thread()->pawnsTable[key];
+		Key key = pos.pawn_key();
+		Entry* e = pos.this_thread()->pawnsTable[key];
 
-  if (e->key == key)
-      return e;
+		if (e->key == key)
+			return e;
 
-  e->key = key;
-  e->scores[WHITE] = evaluate<WHITE>(pos, e);
-  e->scores[BLACK] = evaluate<BLACK>(pos, e);
-  e->openFiles = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
-  e->asymmetry = popcount(  (e->passedPawns[WHITE]   | e->passedPawns[BLACK])
-                          | (e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]));
+		e->key = key;
+		e->scores[WHITE] = evaluate<WHITE>(pos, e);
+		e->scores[BLACK] = evaluate<BLACK>(pos, e);
+		e->openFiles = popcount(e->semiopenFiles[WHITE] & e->semiopenFiles[BLACK]);
+		e->asymmetry = popcount((e->passedPawns[WHITE] | e->passedPawns[BLACK])
+			| (e->semiopenFiles[WHITE] ^ e->semiopenFiles[BLACK]));
 
-  return e;
-}
+		return e;
+	}
+
 
 
 /// Entry::evaluate_shelter() calculates the shelter bonus and the storm
@@ -243,13 +402,13 @@ Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
       safety += 374;
 
   File center = std::max(FILE_B, std::min(FILE_G, file_of(ksq)));
-  for (File f = File(center - 1); f <= File(center + 1); ++f)
-  {
-      b = ourPawns & file_bb(f);
-      Rank rkUs = b ? relative_rank(Us, backmost_sq(Us, b)) : RANK_1;
+		for (File f = File(center - 1); f <= File(center + 1); ++f)
+		{
+			b = ourPawns & file_bb(f);
+			Rank rkUs = b ? relative_rank(Us, backmost_sq(Us, b)) : RANK_1;
 
-      b = theirPawns & file_bb(f);
-      Rank rkThem = b ? relative_rank(Us, frontmost_sq(Them, b)) : RANK_1;
+			b = theirPawns & file_bb(f);
+			Rank rkThem = b ? relative_rank(Us, frontmost_sq(Them, b)) : RANK_1;
 
       int d = std::min(f, ~f);
       safety +=  ShelterStrength[d][rkUs]
@@ -258,23 +417,25 @@ Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
                             [d][rkThem];
   }
 
-  return safety;
-}
+
+		return safety;
+	}
 
 
-/// Entry::do_king_safety() calculates a bonus for king safety. It is called only
-/// when king square changes, which is about 20% of total king_safety() calls.
+	/// Entry::do_king_safety() calculates a bonus for king safety. It is called only
+	/// when king square changes, which is about 20% of total king_safety() calls.
 
-template<Color Us>
-Score Entry::do_king_safety(const Position& pos, Square ksq) {
+	template<Color Us>
+	Score Entry::do_king_safety(const Position& pos, Square ksq) {
 
-  kingSquares[Us] = ksq;
-  castlingRights[Us] = pos.can_castle(Us);
-  int minKingPawnDistance = 0;
+		kingSquares[Us] = ksq;
+		castlingRights[Us] = pos.can_castle(Us);
+		int minKingPawnDistance = 0;
 
-  Bitboard pawns = pos.pieces(Us, PAWN);
-  if (pawns)
-      while (!(DistanceRingBB[ksq][minKingPawnDistance++] & pawns)) {}
+		Bitboard pawns = pos.pieces(Us, PAWN);
+		if (pawns)
+			while (!(DistanceRingBB[ksq][minKingPawnDistance++] & pawns)) {}
+
 
   Value bonus = evaluate_shelter<Us>(pos, ksq);
 
@@ -285,11 +446,11 @@ Score Entry::do_king_safety(const Position& pos, Square ksq) {
   if (pos.can_castle(MakeCastling<Us, QUEEN_SIDE>::right))
       bonus = std::max(bonus, evaluate_shelter<Us>(pos, relative_square(Us, SQ_C1)));
 
-  return make_score(bonus, -16 * minKingPawnDistance);
-}
+		return make_score(bonus, -16 * minKingPawnDistance);
+	}
 
-// Explicit template instantiation
-template Score Entry::do_king_safety<WHITE>(const Position& pos, Square ksq);
-template Score Entry::do_king_safety<BLACK>(const Position& pos, Square ksq);
+	// Explicit template instantiation
+	template Score Entry::do_king_safety<WHITE>(const Position& pos, Square ksq);
+	template Score Entry::do_king_safety<BLACK>(const Position& pos, Square ksq);
 
 } // namespace Pawns

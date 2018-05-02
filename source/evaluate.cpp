@@ -40,12 +40,18 @@ extern bool Options_Junior_Space;
 extern bool Options_Junior_Initiative;
 extern bool Options_Junior_Strategy;
 
+#define PAWN_SCORES
+
 namespace Trace {
 
   enum Tracing { NO_TRACE, TRACE };
 
   enum Term { // The first 8 entries are reserved for PieceType
-    MATERIAL = 8, IMBALANCE, MOBILITY, THREAT, PASSED, SPACE, INITIATIVE, TOTAL, TERM_NB
+    MATERIAL = 8, IMBALANCE, MOBILITY, THREAT, PASSED, SPACE,
+#ifdef PAWN_SCORES
+	CENTER, 
+#endif
+	INITIATIVE, TOTAL, TERM_NB
   };
 
   Score scores[TERM_NB][COLOR_NB];
@@ -171,9 +177,9 @@ namespace {
   // KingProtector[PieceType-2] contains a penalty according to distance from king
   constexpr Score KingProtector[] = { S(3, 5), S(4, 3), S(3, 0), S(1, -1) };
 
-  //  Knight Scores
-  constexpr Score KnightScores[RANK_NB][FILE_NB] = {
-		{ S(-25, -25), S(-15, -15), S(-10, -10), S(-10, -10), S(-10, -10), S(-10, -10), S(-15, -15), S(-25, -25) },
+  //  Knight Scores Board
+  constexpr Score KnightScoresBoard[RANK_NB][FILE_NB] = {
+		{ S(-25, -25), S(-10, -10), S(-10, -10), S(-10, -10), S(-10, -10), S(-10, -10), S(-10, -10), S(-25, -25) },
 		{ S(-15, -15), S(-05, -05), S(+00, +00), S(+00, +00), S(+00, +00), S(+00, +00), S(-05, -05), S(-15, -15) },
 		{ S(-10, -10), S(+00, +00), S(+10, +10), S(+10, +10), S(+10, +10), S(+10, +10), S(+00, +00), S(-10, -10) },
 		{ S(-10, -10), S(+00, +00), S(+10, +10), S(+25, +25), S(+25, +25), S(+10, +10), S(+00, +00), S(-10, -10) },
@@ -187,9 +193,23 @@ namespace {
   //	Bishop for Knight Scores advantage compensation
   constexpr Score BishopScores = S(+20, +10);
   //	Rook for Knight Scores advantage compensation
-  constexpr Score RookScores = S(+10, +30);
+  constexpr Score RookScores = S(+15, +30);
   //	Queen for Knight Scores advantage compensation
   constexpr Score QueenScores = S(+20, +60);
+
+#ifdef PAWN_SCORES
+  //  Pawn Scores Board
+  constexpr Score PawnScoresBoard[RANK_NB][FILE_NB] = {
+		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
+		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
+		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
+		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+010, +000), S(+010, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
+		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+012, +000), S(+012, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
+		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+005, +000), S(+005, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
+		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
+		{ S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000), S(+000, +000) },
+  };
+#endif
 
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  3,  5);
@@ -231,6 +251,9 @@ namespace {
     template<Color Us> Score threats() const;
     template<Color Us> Score passed() const;
     template<Color Us> Score space() const;
+#ifdef PAWN_SCORES
+	template<Color Us> Score pawn_center() const;
+#endif
     ScaleFactor scale_factor(Value eg) const;
     Score initiative(Value eg) const;
 
@@ -414,13 +437,13 @@ namespace {
 					int file = file_of(s);
 					if (Us == WHITE)
 					{
-						score += KnightScores[rank][file];
+						score += KnightScoresBoard[rank][file];
 					}
 					else
 					{
 						if (Us == BLACK)
 						{
-							score += KnightScores[RANK_NB - 1 -rank][file];
+							score += KnightScoresBoard[RANK_NB - 1 -rank][file];
 						}
 						else
 						{
@@ -782,6 +805,52 @@ namespace {
   }
 
 
+#ifdef PAWN_SCORES
+  //	Pawn Center evaluation
+
+  template<Tracing T> template<Color Us>
+  Score Evaluation<T>::pawn_center() const {
+
+	  //constexpr Color Them = (Us == WHITE ? BLACK : WHITE);
+
+	  const Square* pl = pos.squares<PAWN>(Us);
+
+	  Square s;
+	  Score score = SCORE_ZERO;
+
+	  while ((s = *pl++) != SQ_NONE)
+	  {
+		  if (pos.piece_on(s) == make_piece(Us, PAWN))
+		  {
+			  int rank = rank_of(s);
+			  int file = file_of(s);
+			  if (Us == WHITE)
+			  {
+				  score += PawnScoresBoard[rank][file];
+			  }
+			  else
+			  {
+				  if (Us == BLACK)
+				  {
+					  score += PawnScoresBoard[RANK_NB - 1 - rank][file];
+				  }
+				  else
+				  {
+					  assert(false);
+				  }
+			  }
+		  }
+
+	  }
+
+	  if (T)
+		  Trace::add(CENTER, Us, score);
+
+	  return score;
+  }
+#endif
+
+
   // Evaluation::space() computes the space evaluation for a given side. The
   // space evaluation is a simple bonus based on the number of safe squares
   // available for minor pieces on the central four files on ranks 2--4. Safe
@@ -925,10 +994,11 @@ namespace {
     initialize<BLACK>();
 
     // Pieces should be evaluated first (populate attack tables)
-    score +=  pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
-            + pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
-            + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
-            + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
+	score +=
+		pieces<WHITE, KNIGHT>() - pieces<BLACK, KNIGHT>()
+		+ pieces<WHITE, BISHOP>() - pieces<BLACK, BISHOP>()
+		+ pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
+		+ pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
 	Value v_Junior_test = v;
 	
@@ -982,6 +1052,10 @@ namespace {
 	{
 		score += initiative(eg_value(score));
 	}
+
+#ifdef PAWN_SCORES
+	score += pawn_center<WHITE>() - pawn_center<BLACK>();
+#endif
 
     // Interpolate between a middlegame and a (scaled by 'sf') endgame score
     ScaleFactor sf = scale_factor(eg_value(score));
@@ -1038,6 +1112,9 @@ std::string Eval::trace(const Position& pos) {
      << "   Imbalance | " << Term(IMBALANCE)
      << "  Initiative | " << Term(INITIATIVE)
      << "       Pawns | " << Term(PAWN)
+#ifdef PAWN_SCORES
+	 << " Pawns Bonus | " << Term(CENTER)
+#endif
      << "     Knights | " << Term(KNIGHT)
      << "     Bishops | " << Term(BISHOP)
      << "       Rooks | " << Term(ROOK)
