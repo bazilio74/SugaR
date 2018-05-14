@@ -70,21 +70,17 @@ namespace {
   };
 
   // Danger of enemy pawns moving toward our king by [type][distance from edge][rank].
-  // For the unopposed and unblocked cases, RANK_1 = 0 is used when opponent has
-  // no pawn on the given file, or their pawn is behind our king.
+  // For the unblocked case, RANK_1 = 0 is used when opponent has no pawn on the
+  // given file, or their pawn is behind our king.
   constexpr Value StormDanger[][4][RANK_NB] = {
-    { { V(11),  V( 79), V(132), V( 68), V( 33) },  // Unopposed
-      { V( 4),  V(104), V(155), V(  4), V( 21) },
-      { V(-7),  V( 59), V(142), V( 45), V( 30) },
-      { V( 0),  V( 62), V(113), V( 43), V( 13) } },
+    { { V(25),  V( 79), V(107), V( 51), V( 27) },  // UnBlocked
+      { V(15),  V( 45), V(131), V(  8), V( 25) },
+      { V( 0),  V( 42), V(118), V( 56), V( 27) },
+      { V( 3),  V( 54), V(110), V( 55), V( 26) } },
     { { V( 0),  V(  0), V( 37), V(  5), V(-48) },  // BlockedByPawn
       { V( 0),  V(  0), V( 68), V(-12), V( 13) },
       { V( 0),  V(  0), V(111), V(-25), V( -3) },
-      { V( 0),  V(  0), V(108), V( 14), V( 21) } },
-    { { V(38),  V( 78), V( 83), V( 35), V( 22) },  // Unblocked
-      { V(33),  V(-15), V(108), V( 12), V( 28) },
-      { V( 8),  V( 25), V( 94), V( 68), V( 25) },
-      { V( 6),  V( 48), V(120), V( 68), V( 40) } }
+      { V( 0),  V(  0), V(108), V( 14), V( 21) } }
   };
 
   #undef S
@@ -368,17 +364,16 @@ namespace Pawns {
 	}
 
 
-
 /// Entry::evaluate_shelter() calculates the shelter bonus and the storm
 /// penalty for a king, looking at the king file and the two closest files.
 
 template<Color Us>
 Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
 
-  enum { Unopposed, BlockedByPawn, Unblocked };
+  enum { UnBlocked, BlockedByPawn };
   constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
-  constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
-  constexpr Bitboard  BlockRanks = (Us == WHITE ? Rank2BB | Rank3BB : Rank7BB | Rank6BB);
+  constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
+  constexpr Bitboard  BlockRanks = (Us == WHITE ? Rank1BB | Rank2BB : Rank8BB | Rank7BB);
 
   Bitboard b = pos.pieces(PAWN) & (forward_ranks_bb(Us, ksq) | rank_bb(ksq));
   Bitboard ourPawns = b & pos.pieces(Us);
@@ -386,28 +381,27 @@ Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
 
   Value safety = (ourPawns & file_bb(ksq)) ? Value(5) : Value(-5);
 
-  if ((theirPawns & (FileABB | FileHBB) & BlockRanks) & (ksq + Up))
-      safety += 374;
+  if (shift<Down>(theirPawns) & (FileABB | FileHBB) & BlockRanks & ksq)
+      safety += Value(374);
 
   File center = std::max(FILE_B, std::min(FILE_G, file_of(ksq)));
-		for (File f = File(center - 1); f <= File(center + 1); ++f)
-		{
-			b = ourPawns & file_bb(f);
-			Rank rkUs = b ? relative_rank(Us, backmost_sq(Us, b)) : RANK_1;
+  for (File f = File(center - 1); f <= File(center + 1); ++f)
+  {
+      b = ourPawns & file_bb(f);
+      int ourRank = b ? relative_rank(Us, backmost_sq(Us, b)) : 0;
 
-			b = theirPawns & file_bb(f);
-			Rank rkThem = b ? relative_rank(Us, frontmost_sq(Them, b)) : RANK_1;
+      b = theirPawns & file_bb(f);
+      int theirRank = b ? relative_rank(Us, frontmost_sq(Them, b)) : 0;
 
       int d = std::min(f, ~f);
-      safety +=  ShelterStrength[d][rkUs]
-               - StormDanger[rkUs == RANK_1     ? Unopposed     :
-                             rkUs == rkThem - 1 ? BlockedByPawn : Unblocked]
-                            [d][rkThem];
+
+      safety += ShelterStrength[d][ourRank];
+      if (ourRank || theirRank)
+         safety -= StormDanger[ourRank && (ourRank == theirRank - 1) ? BlockedByPawn : UnBlocked][d][theirRank];
   }
 
-
-		return safety;
-	}
+  return safety;
+}
 
 
 	/// Entry::do_king_safety() calculates a bonus for king safety. It is called only
