@@ -909,9 +909,6 @@ moves_loop: // When in check, search starts from here
                                       ss->killers);
     value = bestValue; // Workaround a bogus 'uninitialized' warning under gcc
 
-	bool greatlyImproving = (ss - 0)->staticEval > (ss - 2)->staticEval + 16
-		 && (ss - 2)->staticEval > (ss - 4)->staticEval + 16;
-
     skipQuiets = false;
     ttCapture = false;
     pvExact = PvNode && ttHit && tte->bound() == BOUND_EXACT;
@@ -1098,11 +1095,7 @@ moves_loop: // When in check, search starts from here
 
           Depth d = std::max(newDepth - r, ONE_PLY);
 
-		  bool foo = PvNode && !moveCountPruning && greatlyImproving && ss->staticEval > alpha;
-		  // && "iteration depth" >= 10 * ONE_PLY;
-		  // or && "iteration depth" >= 4 * ONE_PLY
-
-          value = -search<NonPV>(pos, ss+1, -(alpha+1), -alpha, d, true, foo);
+          value = -search<NonPV>(pos, ss+1, -(alpha+1), -alpha, d, true);
 
           doFullDepthSearch = (value > alpha && d != newDepth);
       }
