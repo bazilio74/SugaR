@@ -73,14 +73,14 @@ void init(OptionsMap& o) {
   // at most 2^32 clusters.
   constexpr int MaxHashMB = Is64Bit ? 131072 : 2048;
 
-  unsigned int n = std::thread::hardware_concurrency();
+  unsigned n = std::thread::hardware_concurrency();
   if (!n) n = 1;
   
   o["Debug Log File"]        << Option("", on_logger);
   o["Contempt"]              << Option(12, -100, 100);
   o["Analysis Contempt"]     << Option("Both var Off var White var Black var Both", "Both");
   o["Large Pages"]           << Option(true, on_large_pages);
-  o["Threads"]               << Option(n, unsigned int(1), unsigned int(512), on_threads);
+  o["Threads"]               << Option(n, unsigned(1), unsigned(512), on_threads);
   o["Hash"]                  << Option(128, 1, MaxHashMB, on_hash_size);
   o["Clear Hash"]            << Option(on_clear_hash);
   o["Ponder"]                << Option(false);
