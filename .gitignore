@@ -19,3 +19,5 @@
 
 # Ignore temporary folders
 .vs/
+/executable/Machine Learning/SugarMachineLearning.sml
+/executable/Master/Cerebellum_Light_Poly.bin
