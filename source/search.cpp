@@ -615,6 +615,7 @@ namespace {
     // Step 1. Initialize node
     Thread* thisThread = pos.this_thread();
     inCheck = pos.checkers();
+	Color us = pos.side_to_move();
     moveCount = captureCount = quietCount = ss->moveCount = 0;
     bestValue = -VALUE_INFINITE;
     maxValue = VALUE_INFINITE;
@@ -707,7 +708,7 @@ namespace {
             else if (!pos.capture_or_promotion(ttMove))
             {
                 int penalty = -stat_bonus(depth);
-                thisThread->mainHistory[pos.side_to_move()][from_to(ttMove)] << penalty;
+                thisThread->mainHistory[us][from_to(ttMove)] << penalty;
                 update_continuation_histories(ss, pos.moved_piece(ttMove), to_sq(ttMove), penalty);
             }
         }
@@ -818,8 +819,8 @@ namespace {
         &&  eval >= beta
         &&  ss->staticEval >= beta - 36 * depth / ONE_PLY + 225
         && !excludedMove
-        &&  pos.non_pawn_material(pos.side_to_move())
-        && (ss->ply >= thisThread->nmp_ply || ss->ply % 2 != thisThread->nmp_odd))
+        &&  pos.non_pawn_material(us)
+        && (ss->ply > thisThread->nmp_min_ply || us != thisThread->nmp_color))
     {
         assert(eval - beta >= 0);
 
@@ -841,17 +842,17 @@ namespace {
             if (nullValue >= VALUE_MATE_IN_MAX_PLY)
                 nullValue = beta;
 
-            if (abs(beta) < VALUE_KNOWN_WIN && (depth < 12 * ONE_PLY || thisThread->nmp_ply))
+            if (abs(beta) < VALUE_KNOWN_WIN && (depth < 12 * ONE_PLY || thisThread->nmp_min_ply))
                 return nullValue;
 
             // Do verification search at high depths. Disable null move pruning
             // for side to move for the first part of the remaining search tree.
-            thisThread->nmp_ply = ss->ply + 3 * (depth-R) / 4;
-            thisThread->nmp_odd = ss->ply % 2;
+            thisThread->nmp_min_ply = ss->ply + 3 * (depth-R) / 4 - 1;
+            thisThread->nmp_color = us;
 
             Value v = search<NonPV>(pos, ss, beta-1, beta, depth-R, false);
 
-            thisThread->nmp_odd = thisThread->nmp_ply = 0;
+            thisThread->nmp_min_ply = 0;
 
             if (v >= beta)
                 return nullValue;
@@ -992,7 +993,7 @@ moves_loop: // When in check, search starts from here
 
       // Step 14. Pruning at shallow depth (~170 Elo)
       if (  !rootNode
-          && pos.non_pawn_material(pos.side_to_move())
+          && pos.non_pawn_material(us)
           && bestValue > VALUE_MATED_IN_MAX_PLY)
       {
           if (   !captureOrPromotion
@@ -1087,7 +1088,7 @@ moves_loop: // When in check, search starts from here
                        && !pos.see_ge(make_move(to_sq(move), from_sq(move))))
                   r -= 2 * ONE_PLY;
 
-              ss->statScore =  thisThread->mainHistory[~pos.side_to_move()][from_to(move)]
+              ss->statScore =  thisThread->mainHistory[us][from_to(move)]
                              + (*contHist[0])[movedPiece][to_sq(move)]
                              + (*contHist[1])[movedPiece][to_sq(move)]
                              + (*contHist[3])[movedPiece][to_sq(move)]
