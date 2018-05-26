@@ -285,7 +285,6 @@ void MainThread::search() {
               if (th != this)
                   th->start_searching();
 
-
           Thread::search(); // Let's start searching!
       }
   }
@@ -615,7 +614,7 @@ namespace {
     // Step 1. Initialize node
     Thread* thisThread = pos.this_thread();
     inCheck = pos.checkers();
-	Color us = pos.side_to_move();
+    Color us = pos.side_to_move();
     moveCount = captureCount = quietCount = ss->moveCount = 0;
     bestValue = -VALUE_INFINITE;
     maxValue = VALUE_INFINITE;
@@ -815,7 +814,7 @@ namespace {
     if (    doNull
         && !PvNode
         && (ss-1)->currentMove != MOVE_NULL
-		&& (ss-1)->statScore < 22500
+        && (ss-1)->statScore < 22500
         &&  eval >= beta
         &&  ss->staticEval >= beta - 36 * depth / ONE_PLY + 225
         && !excludedMove
@@ -844,8 +843,8 @@ namespace {
 
             if (thisThread->nmp_min_ply || (abs(beta) < VALUE_KNOWN_WIN && depth < 12 * ONE_PLY))
                 return nullValue;
-			
-			assert(!thisThread->nmp_min_ply); // Recursive verification is not allowed
+
+            assert(!thisThread->nmp_min_ply); // Recursive verification is not allowed
 
             // Do verification search at high depths, with null move pruning disabled
             // for us, until ply exceeds nmp_min_ply.
@@ -1064,7 +1063,14 @@ moves_loop: // When in check, search starts from here
           Depth r = reduction<PvNode>(improving, depth, moveCount);
 
           if (captureOrPromotion) // (~5 Elo)
+          {
+              //Increase reduction by comparing opponent's stat score
+              if (   (ss-1)->statScore >= 0 
+                  && thisThread->captureHistory[movedPiece][to_sq(move)][type_of(pos.captured_piece())] < 0)
+                  r += ONE_PLY;
+                            
               r -= r ? ONE_PLY : DEPTH_ZERO;
+          }
           else
           {
               // Decrease reduction if opponent's move count is high (~5 Elo)
@@ -1356,7 +1362,7 @@ moves_loop: // When in check, search starts from here
         futilityBase = bestValue + 128;
     }
 
-      // Initialize a MovePicker object for the current position, and prepare
+    // Initialize a MovePicker object for the current position, and prepare
     // to search the moves. Because the depth is <= 0 here, only captures,
     // queen promotions and checks (only if depth >= DEPTH_QS_CHECKS) will
     // be generated.
