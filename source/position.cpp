@@ -130,6 +130,19 @@ std::ostream& operator<<(std::ostream& os, const Position& pos) {
 }
 
 
+// Marcel van Kervinck's cuckoo algorithm for fast detection of "upcoming repetition"
+// situations. Description of the algorithm in the following paper:
+// https://marcelk.net/2013-04-06/paper/upcoming-rep-v2.pdf
+
+// First and second hash functions for indexing the cuckoo tables
+inline int H1(Key h) { return h & 0x1fff; }
+inline int H2(Key h) { return (h >> 16) & 0x1fff; }
+
+// Cuckoo tables with Zobrist hashes of valid reversible moves, and the moves themselves
+Key cuckoo[8192];
+Move cuckooMove[8192];
+
+
 /// Position::init() initializes at startup the various arrays used to compute
 /// hash keys.
 
@@ -157,6 +170,28 @@ void Position::init() {
 
   Zobrist::side = rng.rand<Key>();
   Zobrist::noPawns = rng.rand<Key>();
+
+  // Prepare the cuckoo tables
+  int count = 0;
+  for (Piece pc : Pieces)
+      for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1)
+          for (Square s2 = Square(s1 + 1); s2 <= SQ_H8; ++s2)
+              if (PseudoAttacks[type_of(pc)][s1] & s2)
+              {
+                  Move move = make_move(s1, s2);
+                  Key key = Zobrist::psq[pc][s1] ^ Zobrist::psq[pc][s2] ^ Zobrist::side;
+                  int i = H1(key);
+                  while (true)
+                  {
+                      std::swap(cuckoo[i], key);
+                      std::swap(cuckooMove[i], move);
+                      if (move == 0)   // Arrived at empty slot ?
+                          break;
+                      i = (i == H1(key)) ? H2(key) : H1(key); // Push victim to alternative slot
+                  }
+                  count++;
+             }
+  assert(count == 3668);
 }
 
 
@@ -167,9 +202,7 @@ void Position::init() {
 Position& Position::set(const string& fenStr, bool isChess960, StateInfo* si, Thread* th) {
 /*
    A FEN string defines a particular position using only the ASCII character set.
-
    A FEN string contains six fields separated by a space. The fields are:
-
    1) Piece placement (from white's perspective). Each rank is described, starting
       with rank 8 and ending with rank 1. Within each rank, the contents of each
       square are described from file A through file H. Following the Standard
@@ -178,24 +211,19 @@ Position& Position::set(const string& fenStr, bool isChess960, StateInfo* si, Th
       letters ("PNBRQK") whilst Black uses lowercase ("pnbrqk"). Blank squares are
       noted using digits 1 through 8 (the number of blank squares), and "/"
       separates ranks.
-
    2) Active color. "w" means white moves next, "b" means black.
-
    3) Castling availability. If neither side can castle, this is "-". Otherwise,
       this has one or more letters: "K" (White can castle kingside), "Q" (White
       can castle queenside), "k" (Black can castle kingside), and/or "q" (Black
       can castle queenside).
-
    4) En passant target square (in algebraic notation). If there's no en passant
       target square, this is "-". If a pawn has just made a 2-square move, this
       is the position "behind" the pawn. This is recorded only if there is a pawn
       in position to make an en passant capture, and if there really is a pawn
       that might have advanced two squares.
-
    5) Halfmove clock. This is the number of halfmoves since the last pawn advance
       or capture. This is used to determine if a draw can be claimed under the
       fifty-move rule.
-
    6) Fullmove number. The number of the full move. It starts at 1, and is
       incremented after Black's move.
 */
@@ -1113,9 +1141,9 @@ bool Position::has_repeated() const {
     StateInfo* stc = st;
     while (true)
     {
-        int i = 4, e = std::min(stc->rule50, stc->pliesFromNull);
+        int i = 4, end = std::min(stc->rule50, stc->pliesFromNull);
 
-        if (e < i)
+        if (end < i)
             return false;
 
         StateInfo* stp = st->previous->previous;
@@ -1127,16 +1155,66 @@ bool Position::has_repeated() const {
                 return true;
 
             i += 2;
-        } while (i <= e);
+        } while (i <= end);
 
         stc = stc->previous;
     }
 }
 
 
+/// Position::has_game_cycle() tests if the position has a move which draws by repetition,
+/// or an earlier position has a move that directly reaches the current position.
+
+bool Position::has_game_cycle(int ply) const {
+
+  int j;
+
+  int end = std::min(st->rule50, st->pliesFromNull);
+
+  if (end < 3)
+    return false;
+
+  Key originalKey = st->key;
+  StateInfo* stp = st->previous;
+
+  for (int i = 3; i <= end; i += 2)
+  {
+      stp = stp->previous->previous;
+
+      Key moveKey = originalKey ^ stp->key;
+      if (   (j = H1(moveKey), cuckoo[j] == moveKey)
+          || (j = H2(moveKey), cuckoo[j] == moveKey))
+      {
+          Move move = cuckooMove[j];
+          Square from = from_sq(move);
+          Square to = to_sq(move);
+
+          if (!(between_bb(from, to) & pieces()))
+          {
+              // Take care to reverse the move in the no-progress case (opponent to move)
+              if (empty(from))
+                  move = make_move(to, from);
+
+              if (ply > i)
+                  return true;
+
+              // For repetitions before or at the root, require one more
+              StateInfo* next_stp = stp;
+              for (int k = i + 2; k <= end; k += 2)
+              {
+                  next_stp = next_stp->previous->previous;
+                  if (next_stp->key == stp->key)
+                     return true;
+              }
+          }
+      }
+  }
+  return false;
+}
+
+
 /// Position::flip() flips position with the white and black sides reversed. This
 /// is only useful for debugging e.g. for finding evaluation symmetry bugs.
-
 
 void Position::flip() {
 
