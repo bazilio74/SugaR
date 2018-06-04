@@ -1115,7 +1115,7 @@ bool Position::is_draw(int ply) const {
   if (end < 4)
     return false;
 
-  StateInfo* stp = stc->previous->previous;
+  StateInfo* stp = st->previous->previous;
   int cnt = 0;
 
   for (int i = 4; i <= end; i += 2)
