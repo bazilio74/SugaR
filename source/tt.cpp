@@ -135,19 +135,14 @@ void TranspositionTable::resize(size_t mbSize) {
   Try_Get_LockMemory_Privileges();
 #endif
 
-  size_t newClusterCount = mbSize * 1024 * 1024 / sizeof(Cluster);
+  clusterCount = mbSize * 1024 * 1024 / sizeof(Cluster);
 
-  if (newClusterCount == clusterCount)
   {
 #ifdef _WIN32
       if ((use_large_pages == 1) && (large_pages_used))      
           return;
       if ((use_large_pages == 0) && (large_pages_used == false))
 #endif
-          return;
-  }
-
-  clusterCount = newClusterCount;
  
 #ifdef _WIN32
   if (use_large_pages < 1)
