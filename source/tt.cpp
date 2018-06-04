@@ -20,6 +20,7 @@
 
 #include <cstring>   // For std::memset
 #include <iostream>
+#include <thread>
 #include <fstream>
 #include "uci.h"
 using std::string;
@@ -28,6 +29,7 @@ using std::string;
 #include <sstream>
 #include <vector>
 #include <iterator>
+#include "misc.h"
 #include "position.h"
 #include "thread.h"
 #include "bitboard.h"
@@ -213,10 +215,27 @@ void TranspositionTable::resize(size_t mbSize) {
 /// TranspositionTable::clear() overwrites the entire transposition table
 /// with zeros. It is called whenever the table is resized, or when the
 /// user asks the program to clear the table (from the UCI interface).
+/// It starts as many threads as allowed by the Threads option.
 
 void TranspositionTable::clear() {
 
-  std::memset(table, 0, clusterCount * sizeof(Cluster));
+  const size_t stride = clusterCount / Options["Threads"];
+  std::vector<std::thread> threads;
+  for (size_t idx = 0; idx < Options["Threads"]; idx++)
+  {
+      const size_t start =  stride * idx,
+                   len =    idx != Options["Threads"] - 1 ?
+                            stride :
+                            clusterCount - start;
+      threads.push_back(std::thread([this, idx, start, len]() {
+          if (Options["Threads"] >= 8)
+              WinProcGroup::bindThisThread(idx);
+          std::memset(&table[start], 0, len * sizeof(Cluster));
+      }));
+  }
+
+  for (std::thread& th: threads)
+      th.join();
 }
 
 void TranspositionTable::set_hash_file_name(const std::string& fname) { hashfilename = fname; }
