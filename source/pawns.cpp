@@ -36,7 +36,7 @@ namespace {
   // Pawn penalties
   constexpr Score Isolated = S(13, 16);
   constexpr Score Backward = S(17, 11);
-  constexpr Score Doubled = S(13, 40);
+  constexpr Score Doubled  = S(13, 40);
 
   
 #ifdef PAWN_SCORES
