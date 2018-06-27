@@ -57,12 +57,8 @@ namespace {
   // RANK_1 = 0 is used for files where we have no pawn, or pawn is behind our king.
   constexpr Value ShelterStrength[int(FILE_NB) / 2][RANK_NB] = {
     { V( 16), V(82), V( 83), V( 47), V( 19), V( 44), V(  4) },
-  
     { V(-51), V(56), V( 33), V(-58), V(-57), V(-50), V(-39) },
- 
     { V(-20), V(71), V( 16), V(-10), V( 13), V( 19), V(-30) },
-  
-  
     { V(-29), V(12), V(-21), V(-40), V(-15), V(-77), V(-91) }
   };
 
@@ -71,13 +67,9 @@ namespace {
   // is behind our king.
   constexpr Value UnblockedStorm[int(FILE_NB) / 2][RANK_NB] = {
     { V(54), V( 48), V( 99), V(91), V(42), V( 32), V( 31) },
-	
     { V(34), V( 27), V(105), V(38), V(32), V(-19), V(  3) },
-	  
-	   
     { V(-4), V( 28), V( 87), V(18), V(-3), V(-14), V(-11) },
     { V(-5), V( 22), V( 75), V(14), V( 2), V( -5), V(-19) }
-	 
   };
 
   // Danger of blocked enemy pawns storming our king, by rank
@@ -372,8 +364,8 @@ template<Color Us>
 Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
 
   constexpr Color     Them = (Us == WHITE ? BLACK : WHITE);
-  constexpr Direction Up   = (Us == WHITE ? NORTH : SOUTH);
-  constexpr Bitboard  BlockRanks = (Us == WHITE ? Rank2BB | Rank3BB : Rank7BB | Rank6BB);
+  constexpr Direction Down = (Us == WHITE ? SOUTH : NORTH);
+  constexpr Bitboard  BlockRanks = (Us == WHITE ? Rank1BB | Rank2BB : Rank8BB | Rank7BB);
 
   Bitboard b = pos.pieces(PAWN) & (forward_ranks_bb(Us, ksq) | rank_bb(ksq));
   Bitboard ourPawns = b & pos.pieces(Us);
@@ -381,7 +373,7 @@ Value Entry::evaluate_shelter(const Position& pos, Square ksq) {
 
   Value safety = (ourPawns & file_bb(ksq)) ? Value(5) : Value(-5);
 
-  if ((theirPawns & (FileABB | FileHBB) & BlockRanks) & (ksq + Up))
+  if (shift<Down>(theirPawns) & (FileABB | FileHBB) & BlockRanks & ksq)
       safety += Value(374);
 
   File center = std::max(FILE_B, std::min(FILE_G, file_of(ksq)));
