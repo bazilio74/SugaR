@@ -1711,7 +1711,6 @@ bool RootMove::extract_ponder_from_tt(Position& pos) {
     return pv.size() > 1;
 }
 
-
 void Tablebases::rank_root_moves(Position& pos, Search::RootMoves& rootMoves) {
 
     RootInTB = false;
