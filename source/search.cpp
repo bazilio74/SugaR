@@ -40,16 +40,6 @@
 #include "uci.h"
 #include "syzygy/tbprobe.h"
 
-int Options_Junior_Depth;
-bool Options_Junior_Mobility;
-bool Options_Junior_King;
-bool Options_Junior_Threats;
-bool Options_Junior_Passed;
-bool Options_Junior_Space;
-bool Options_Junior_Initiative;
-
-bool Options_Junior_Strategy;
-
 namespace Search {
 
   LimitsType Limits;
@@ -230,16 +220,6 @@ void MainThread::search() {
   doNull   = Options["NullMove"];
   tactical =  Options["Analysis Mode"];
 
-  Options_Junior_Depth = Options["Junior Depth"];
-  Options_Junior_Mobility = Options["Junior Mobility"];
-  Options_Junior_King = Options["Junior King"];
-  Options_Junior_Threats = Options["Junior Threats"];
-  Options_Junior_Passed = Options["Junior Passed"];
-  Options_Junior_Space = Options["Junior Space"];
-  Options_Junior_Initiative = Options["Junior Initiative"];
-
-  Options_Junior_Strategy = Options["Shashin Strategy"];
- 
   if (rootMoves.empty())
   {
       rootMoves.emplace_back(MOVE_NONE);
@@ -390,7 +370,6 @@ void Thread::search() {
 
   // Iterative deepening loop until requested to stop or the target depth is reached
   while (   (rootDepth += ONE_PLY) < DEPTH_MAX
-	     && rootDepth <= Options_Junior_Depth
          && !Threads.stop
          && !(Limits.depth && mainThread && rootDepth / ONE_PLY > Limits.depth))
   {
