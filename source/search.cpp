@@ -1221,7 +1221,7 @@ moves_loop: // When in check, search starts from here
     {
         // Quiet best move: update move sorting heuristics
         if (!pos.capture_or_promotion(bestMove))
-            update_quiet_stats(pos, ss, bestMove, quietsSearched, quietCount, 
+            update_quiet_stats(pos, ss, bestMove, quietsSearched, quietCount,
                                stat_bonus(depth + (bestValue > beta + PawnValueMg ? ONE_PLY : DEPTH_ZERO)));
         else
             update_capture_stats(pos, bestMove, capturesSearched, captureCount, stat_bonus(depth + ONE_PLY));
@@ -1710,7 +1710,6 @@ bool RootMove::extract_ponder_from_tt(Position& pos) {
     pos.undo_move(pv[0]);
     return pv.size() > 1;
 }
-
 
 void Tablebases::rank_root_moves(Position& pos, Search::RootMoves& rootMoves) {
 
