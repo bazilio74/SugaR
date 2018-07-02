@@ -110,7 +110,7 @@ namespace {
   };
   
   int tactical;
-  bool doNull;	
+  bool doNull, bookEnabled;
 
   template <NodeType NT>
   Value search(Position& pos, Stack* ss, Value alpha, Value beta, Depth depth, bool cutNode);
@@ -228,7 +228,8 @@ void MainThread::search() {
 
   // Read search options
   doNull   = Options["NullMove"];
-  tactical =  Options["Analysis Mode"];
+  tactical =  Options["Tactical Mode"];
+  bookEnabled = Options["Book_Enabled"];
 
   Options_Junior_Depth = Options["Junior Depth"];
   Options_Junior_Mobility = Options["Junior Mobility"];
@@ -259,18 +260,18 @@ void MainThread::search() {
               goto finalize;
           }
       }
-      Move bookMove = MOVE_NONE;
-
-      if (!Limits.infinite && !Limits.mate)
-          bookMove = polybook.probe(rootPos);
-
-      if (bookMove && std::count(rootMoves.begin(), rootMoves.end(), bookMove))
-      {
-          for (Thread* th : Threads)
-              std::swap(th->rootMoves[0], *std::find(th->rootMoves.begin(), th->rootMoves.end(), bookMove));
-      }
-      else
-      {
+		Move bookMove = MOVE_NONE;
+		
+		if (!Limits.infinite && !Limits.mate)
+		bookMove = polybook.probe(rootPos);
+		
+		if (bookEnabled && bookMove && std::count(rootMoves.begin(), rootMoves.end(), bookMove))
+		{
+			for (Thread* th : Threads)
+				std::swap(th->rootMoves[0], *std::find(th->rootMoves.begin(), th->rootMoves.end(), bookMove));
+		}
+		else
+		{
           for (Thread* th : Threads)
               if (th != this)
                   th->start_searching();
