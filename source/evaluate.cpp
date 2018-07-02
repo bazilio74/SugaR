@@ -197,6 +197,11 @@ namespace {
   //	Queen for Knight Scores advantage compensation
   constexpr Score QueenScores = S(+20, +60);
 
+  //	Pawns Storm for Center Pawns advantage compensation
+  constexpr Score PawnStormCompensationPawnScoresPawnsCenter = S(-05, -05);			//	Exact numbers to be determined
+  //	Pawns Shelter for Knight Scores advantage compensation
+  constexpr Score PawnShelterCompensationKnightScores = S(-9, -9);					//	Exact numbers to be determined
+
 #ifdef PAWN_SCORES
   //  Pawn Scores Board
   constexpr Score PawnScoresBoard[RANK_NB][FILE_NB] = {
@@ -413,6 +418,11 @@ namespace {
                 // Bonus for bishop on a long diagonal which can "see" both center squares
                 if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
                     score += LongDiagonalBishop;
+
+				if (pos.piece_on(s) == make_piece(Us, BISHOP))
+				{
+					score += BishopScores;
+				}
             }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
@@ -450,6 +460,8 @@ namespace {
 							assert(false);
 						}
 					}
+
+					score += PawnShelterCompensationKnightScores;
 				}
 			}
         }
@@ -838,8 +850,13 @@ namespace {
 					  assert(false);
 				  }
 			  }
-		  }
+	 
 
+			  if (file == FILE_D || file == FILE_E)
+			  {
+				  score += PawnStormCompensationPawnScoresPawnsCenter;
+			  }
+		  }
 	  }
 
 	  if (T)
