@@ -41,13 +41,13 @@ namespace {
   
 #ifdef PAWN_SCORES
 	//  Pawn Scores Isolated in Rank 3
-	constexpr Score PawnScoresIsolatedRank3 = S(-05, +00);
+	constexpr Score PawnScoresIsolatedRank3 = S(- 5, + 0);
 
 	//  Pawn Scores Connected Passed
 	constexpr Score PawnScoresConnectedPassed = S(-16, +16);
-	constexpr Score KingSafetyCompensationPawnScoresConnectedPassed = S(-05, +00);
+	constexpr Score KingSafetyCompensationPawnScoresConnectedPassed = S(- 5, + 0);
 	//	Protected Passed Pawn
-	constexpr Score ProtectedPassedPawn = S(+05, +05);
+	constexpr Score ProtectedPassedPawn = S(+ 5, + 5);
 
 #endif
 
