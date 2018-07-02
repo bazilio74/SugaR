@@ -49,8 +49,6 @@ namespace {
 	//	Protected Passed Pawn
 	constexpr Score ProtectedPassedPawn = S(+05, +05);
 
-	//	Pawns Center 
-	constexpr Score PawnStormCompensationPawnScoresPawnsCenterPassed = S(-14, +00);	//	Exact numbers to be determined
 #endif
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
@@ -257,15 +255,6 @@ namespace {
 			}
 
 			bool passed1 = bool(passed_pawn_mask(Us, s) & ourPawns);
-
-			if (passed1)
-			{
-				File f1 = f;
-				if (f1 == FILE_D || f1 == FILE_E)
-				{
-					score += PawnStormCompensationPawnScoresPawnsCenterPassed;
-				}
-			}
 
 			if (f0 != f)
 			{
