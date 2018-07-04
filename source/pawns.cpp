@@ -41,14 +41,16 @@ namespace {
   
 #ifdef PAWN_SCORES
 	//  Pawn Scores Isolated in Rank 3
-	constexpr Score PawnScoresIsolatedRank3 = S(- 5, + 0);
+	constexpr Score PawnScoresIsolatedRank3 = S(-5, 0);
 
 	//  Pawn Scores Connected Passed
 	constexpr Score PawnScoresConnectedPassed = S(-16, +16);
-	constexpr Score KingSafetyCompensationPawnScoresConnectedPassed = S(- 5, + 0);
+	constexpr Score KingSafetyCompensationPawnScoresConnectedPassed = S(-5, 0);
 	//	Protected Passed Pawn
-	constexpr Score ProtectedPassedPawn = S(+ 5, + 5);
+	constexpr Score ProtectedPassedPawn = S(+5, +5);
 
+	//	Pawns Center 
+	constexpr Score PawnStormCompensationPawnScoresPawnsCenterPassed = S(-14, 0);	//	Exact numbers to be determined
 #endif
 
   // Connected pawn bonus by opposed, phalanx, #support and rank
@@ -255,6 +257,15 @@ namespace {
 			}
 
 			bool passed1 = bool(passed_pawn_mask(Us, s) & ourPawns);
+
+			if (passed1)
+			{
+				File f1 = f;
+				if (f1 == FILE_D || f1 == FILE_E)
+				{
+					score += PawnStormCompensationPawnScoresPawnsCenterPassed;
+				}
+			}
 
 			if (f0 != f)
 			{
