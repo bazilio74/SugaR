@@ -594,12 +594,13 @@ namespace {
     {
         score -= PawnlessFlank;
 	
-	const Square* pl = pos.squares<KNIGHT>(Us);
+		const Square* pl = pos.squares<KNIGHT>(Us);
+		Square s;
 
-	while ((s = *pl++) != SQ_NONE)
-	{
-		score += PawnShelterCompensationKnightScores;
-	}
+		while ((s = *pl++) != SQ_NONE)
+		{
+			score += PawnShelterCompensationKnightScores;
+		}
     }
 
     // Find the squares that opponent attacks in our king flank, and the squares
