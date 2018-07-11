@@ -176,34 +176,39 @@ namespace {
   //  Knight Scores Board
   constexpr Score KnightScoresBoard[RANK_NB][FILE_NB] = {
 		{ S(-25, -25), S(-10, -10), S(-10, -10), S(-10, -10), S(-10, -10), S(-10, -10), S(-10, -10), S(-25, -25) },
-		{ S(-15, -15), S(-5, -5), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(-5, -5), S(-15, -15) },
-		{ S(-10, -10), S(0, 0), S(+10, +10), S(+10, 0), S(+10, +10), S(+10, +10), S(0, 0), S(-10, -10) },
-		{ S(-10, -10), S(0, 0), S(+10, +10), S(+25, +25), S(+25, +25), S(+10, +10), S(0, 0), S(-10, -10) },
-		{ S(-10, -10), S(0, 0), S(+20, +20), S(+30, +30), S(+30, +30), S(+20, +20), S(0, 0), S(-10, -10) },
-		{ S(-10, -10), S(0, 0), S(+15, +15), S(+20, +20), S(+20, +20), S(+15, +15), S(0, 0), S(-10, -10) },
-		{ S(-15, -15), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(-15, -15) },
-		{ S(-20, -20), S(-5, -5), S(-5, -5), S(-5, -5), S(-5, -5), S(-5, -5), S(-5, -5), S(-20, -20) },
+		{ S(-15, -15), S(- 5, - 5), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(- 5, - 5), S(-15, -15) },
+		{ S(-10, -10), S(+ 0, + 0), S(+10, +10), S(+10, +10), S(+10, +10), S(+10, +10), S(+ 0, + 0), S(-10, -10) },
+		{ S(-10, -10), S(+ 0, + 0), S(+10, +10), S(+25, +25), S(+25, +25), S(+10, +10), S(+ 0, + 0), S(-10, -10) },
+		{ S(-10, -10), S(+ 0, + 0), S(+20, +20), S(+30, +30), S(+30, +30), S(+20, +20), S(+ 0, + 0), S(-10, -10) },
+		{ S(-10, -10), S(+ 0, + 0), S(+15, +15), S(+20, +20), S(+20, +20), S(+15, +15), S(+ 0, + 0), S(-10, -10) },
+		{ S(-15, -15), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(-15, -15) },
+		{ S(-20, -20), S(- 5, - 5), S(- 5, - 5), S(- 5, - 5), S(- 5, - 5), S(- 5, - 5), S(- 5, - 5), S(-20, -20) },
   };
   //	Pawn for Knight Scores advantage compensation
-  constexpr Score PawnScores = S(+4, +6);
+  constexpr Score PawnScores = S(+ 4, + 6);
   //	Bishop for Knight Scores advantage compensation
-  constexpr Score BishopScores = S(+20, +10);
+  constexpr Score BishopScores = S(+10, +5);
   //	Rook for Knight Scores advantage compensation
   constexpr Score RookScores = S(+15, +30);
   //	Queen for Knight Scores advantage compensation
   constexpr Score QueenScores = S(+20, +60);
 
+  //	Pawns Storm for Center Pawns advantage compensation
+  constexpr Score PawnStormCompensationPawnScoresPawnsCenter = S(- 5, - 5);			//	Exact numbers to be determined
+  //	Pawns Shelter for Knight Scores advantage compensation
+  constexpr Score PawnShelterCompensationKnightScores = S(+ 10, + 10);					//	Exact numbers to be determined
+
 #ifdef PAWN_SCORES
   //  Pawn Scores Board
   constexpr Score PawnScoresBoard[RANK_NB][FILE_NB] = {
-		{ S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0) },
-		{ S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0) },
-		{ S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0) },
-		{ S(0, 0), S(0, 0), S(0, 0), S(+12, 0), S(+12, 0), S(0, 0), S(0, 0), S(0, 0) },
-		{ S(0, 0), S(0, 0), S(0, 0), S(+5, 0), S(+5, 0), S(0, 0), S(0, 0), S(0, 0) },
-		{ S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0) },
-		{ S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0) },
-		{ S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0), S(0, 0) },
+		{ S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0) },
+		{ S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0) },
+		{ S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0) },
+		{ S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 8, + 0), S(+ 8, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0) },
+		{ S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+10, + 0), S(+10, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0) },
+		{ S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 6, + 0), S(+ 6, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0) },
+		{ S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0) },
+		{ S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0) },
   };
 #endif
 
@@ -410,6 +415,11 @@ namespace {
                 // Bonus for bishop on a long diagonal which can "see" both center squares
                 if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
                     score += LongDiagonalBishop;
+
+		if (pos.piece_on(s) == make_piece(Us, BISHOP))
+		{
+			score += BishopScores;
+		}
             }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
@@ -426,29 +436,29 @@ namespace {
                                                                               : CorneredBishop;
             }
 
-			if (Pt == KNIGHT)
+		if (Pt == KNIGHT)
+		{
+			if (pos.piece_on(s) == make_piece(Us, KNIGHT))
 			{
-				if (pos.piece_on(s) == make_piece(Us, KNIGHT))
+				int rank = rank_of(s);
+				int file = file_of(s);
+				if (Us == WHITE)
 				{
-					int rank = rank_of(s);
-					int file = file_of(s);
-					if (Us == WHITE)
+					score += KnightScoresBoard[rank][file];
+				}
+				else
+				{
+					if (Us == BLACK)
 					{
-						score += KnightScoresBoard[rank][file];
+						score += KnightScoresBoard[RANK_NB - 1 -rank][file];
 					}
 					else
 					{
-						if (Us == BLACK)
-						{
-							score += KnightScoresBoard[RANK_NB - 1 -rank][file];
-						}
-						else
-						{
-							assert(false);
-						}
+						assert(false);
 					}
 				}
 			}
+		}
         }
 
         if (Pt == ROOK)
@@ -578,7 +588,17 @@ namespace {
 
     // Penalty when our king is on a pawnless flank
     if (!(pos.pieces(PAWN) & kf))
+    {
         score -= PawnlessFlank;
+	
+		const Square* pl = pos.squares<KNIGHT>(Us);
+		Square s;
+
+		while ((s = *pl++) != SQ_NONE)
+		{
+			score += PawnShelterCompensationKnightScores;
+		}
+    }
 
     // Find the squares that opponent attacks in our king flank, and the squares
     // which are attacked twice in that flank but not defended by our pawns.
@@ -835,8 +855,12 @@ namespace {
 					  assert(false);
 				  }
 			  }
-		  }
 
+			  if (file == FILE_D || file == FILE_E)
+			  {
+				  score += PawnStormCompensationPawnScoresPawnsCenter;
+			  }
+		  }
 	  }
 
 	  if (T)
