@@ -40,8 +40,6 @@
 #include "uci.h"
 #include "syzygy/tbprobe.h"
 
-#include "MachineLeaningControl.h"
-
 int Options_Junior_Depth;
 bool Options_Junior_Mobility;
 bool Options_Junior_King;
@@ -155,9 +153,7 @@ namespace {
             pos.undo_move(m);
         }
         if (Root)
-			if (!MachineLearningControlMain.IsSimulatingInProgress()) {
-				sync_cout << UCI::move(m, pos.is_chess960()) << ": " << cnt << sync_endl;
-			}
+            sync_cout << UCI::move(m, pos.is_chess960()) << ": " << cnt << sync_endl;
     }
     return nodes;
   }
@@ -248,12 +244,9 @@ void MainThread::search() {
   if (rootMoves.empty())
   {
       rootMoves.emplace_back(MOVE_NONE);
-	  if (!MachineLearningControlMain.IsSimulatingInProgress())
-	  {
-		  sync_cout << "info depth 0 score "
-			  << UCI::value(rootPos.checkers() ? -VALUE_MATE : VALUE_DRAW)
-			  << sync_endl;
-	  }
+      sync_cout << "info depth 0 score "
+                << UCI::value(rootPos.checkers() ? -VALUE_MATE : VALUE_DRAW)
+                << sync_endl;
   }
   else
   {
@@ -333,25 +326,16 @@ finalize:
 
   previousScore = bestThread->rootMoves[0].score;
 
-  if (!MachineLearningControlMain.IsSimulatingInProgress())
-  {
-	  // Send again PV info if we have a new best thread
-	  if (bestThread != this)
-		  sync_cout << UCI::pv(bestThread->rootPos, bestThread->completedDepth, -VALUE_INFINITE, VALUE_INFINITE) << sync_endl;
-  }
+  // Send again PV info if we have a new best thread
+  if (bestThread != this)
+      sync_cout << UCI::pv(bestThread->rootPos, bestThread->completedDepth, -VALUE_INFINITE, VALUE_INFINITE) << sync_endl;
 
+  sync_cout << "bestmove " << UCI::move(bestThread->rootMoves[0].pv[0], rootPos.is_chess960());
 
-  MachineLearningControlMain.Answer(bestThread->rootMoves[0].pv[0], rootPos.is_chess960());
+  if (bestThread->rootMoves[0].pv.size() > 1 || bestThread->rootMoves[0].extract_ponder_from_tt(rootPos))
+      std::cout << " ponder " << UCI::move(bestThread->rootMoves[0].pv[1], rootPos.is_chess960());
 
-  if ((!MachineLearningControlMain.IsSimulatingInProgress() && !MachineLearningControlMain.IsInfiniteAnalysisInProgress()))
-  {
-	  sync_cout << "bestmove " << UCI::move(bestThread->rootMoves[0].pv[0], rootPos.is_chess960());
-
-	  if (bestThread->rootMoves[0].pv.size() > 1 || bestThread->rootMoves[0].extract_ponder_from_tt(rootPos))
-		  std::cout << " ponder " << UCI::move(bestThread->rootMoves[0].pv[1], rootPos.is_chess960());
-
-	  std::cout << sync_endl;
-  }
+  std::cout << sync_endl;
 }
 
 
@@ -483,14 +467,11 @@ void Thread::search() {
 
               // When failing high/low give some update (without cluttering
               // the UI) before a re-search.
-			  if (mainThread
-				  && multiPV == 1
-				  && (bestValue <= alpha || bestValue >= beta)
-				  && Time.elapsed() > 3000)
-				  if (!MachineLearningControlMain.IsSimulatingInProgress())
-				  {
-					  sync_cout << UCI::pv(rootPos, rootDepth, alpha, beta) << sync_endl;
-				  }
+              if (   mainThread
+                  && multiPV == 1
+                  && (bestValue <= alpha || bestValue >= beta)
+                  && Time.elapsed() > 3000)
+                  sync_cout << UCI::pv(rootPos, rootDepth, alpha, beta) << sync_endl;
 
               // In case of failing low/high increase aspiration window and
               // re-search, otherwise exit the loop.
@@ -519,13 +500,8 @@ void Thread::search() {
           std::stable_sort(rootMoves.begin() + pvFirst, rootMoves.begin() + pvIdx + 1);
 
           if (    mainThread
-
-              && (Threads.stop || PVIdx + 1 == multiPV || Time.elapsed() > 3000))
-			  if (!MachineLearningControlMain.IsSimulatingInProgress())
-			  {
-				  sync_cout << UCI::pv(rootPos, rootDepth, alpha, beta) << sync_endl;
-			  }
-
+              && (Threads.stop || pvIdx + 1 == multiPV || Time.elapsed() > 3000))
+              sync_cout << UCI::pv(rootPos, rootDepth, alpha, beta) << sync_endl;
       }
 
       if (!Threads.stop)
@@ -962,25 +938,9 @@ moves_loop: // When in check, search starts from here
       ss->moveCount = ++moveCount;
 
       if (rootNode && thisThread == Threads.main() && Time.elapsed() > 3000)
-
-		  if (!MachineLearningControlMain.IsSimulatingInProgress())
-		  {
-			  if (MachineLearningControlMain.IsInfiniteAnalysisInProgress())
-			  {
-				  sync_cout << "info depth " << MachineLearningControlMain.GetCurrentInfiniteDepth()
-					  << " currmove " << UCI::move(move, pos.is_chess960())
-					  << " currmovenumber " << moveCount + thisThread->PVIdx 
-					  << sync_endl;
-
-			  }
-			  else
-			  {
-				  sync_cout << "info depth " << depth / ONE_PLY
-					  << " currmove " << UCI::move(move, pos.is_chess960())
-					  << " currmovenumber " << moveCount + thisThread->PVIdx << sync_endl;
-			  }
-		  }
-
+          sync_cout << "info depth " << depth / ONE_PLY
+                    << " currmove " << UCI::move(move, pos.is_chess960())
+                    << " currmovenumber " << moveCount + thisThread->pvIdx << sync_endl;
       if (PvNode)
           (ss+1)->pv = nullptr;
 
@@ -1698,8 +1658,8 @@ string UCI::pv(const Position& pos, Depth depth, Value alpha, Value beta) {
       if (ss.rdbuf()->in_avail()) // Not at first line
           ss << "\n";
 
-	  ss << "info"
-		  << " depth " << (MachineLearningControlMain.IsInfiniteAnalysisInProgress() ? MachineLearningControlMain .GetCurrentInfiniteDepth() : d / ONE_PLY)
+      ss << "info"
+         << " depth "    << d / ONE_PLY
          << " seldepth " << rootMoves[i].selDepth
          << " multipv "  << i + 1
          << " score "    << UCI::value(v);

@@ -366,9 +366,6 @@
     <ClCompile Include="book.cpp" />
     <ClCompile Include="endgame.cpp" />
     <ClCompile Include="evaluate.cpp" />
-    <ClCompile Include="MachineLeaningControl.cpp" />
-    <ClCompile Include="MachineLearningData.cpp" />
-    <ClCompile Include="MachineLearningDataAtom.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="material.cpp" />
     <ClCompile Include="misc.cpp" />
@@ -391,9 +388,6 @@
     <ClInclude Include="book.h" />
     <ClInclude Include="endgame.h" />
     <ClInclude Include="evaluate.h" />
-    <ClInclude Include="MachineLeaningControl.h" />
-    <ClInclude Include="MachineLearningData.h" />
-    <ClInclude Include="MachineLearningDataAtom.h" />
     <ClInclude Include="material.h" />
     <ClInclude Include="misc.h" />
     <ClInclude Include="movegen.h" />
