@@ -282,7 +282,7 @@ template <int MoveType> inline Move test_move(Position &pos, Square fromsquare, 
 	//if (pos.pseudo_legal(move) && pos.legal(move, pos.pinned_pieces(pos.side_to_move()))) {
 	if (pos.pseudo_legal(move) && pos.legal(move)) {
 #ifdef SAN_DEBUG
-			sync_cout << "found a move: " << move_to_uci(move, false) << sync_endl;
+		sync_cout << "found a move: " << move_to_uci(move, false) << sync_endl;
 #endif
 		return move;
 	}

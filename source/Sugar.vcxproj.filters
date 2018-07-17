@@ -81,15 +81,6 @@
     <ClCompile Include="syzygy\tbprobe.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MachineLeaningControl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MachineLearningDataAtom.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="MachineLearningData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bitboard.h">
@@ -150,15 +141,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VersionHelpers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MachineLeaningControl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MachineLearningDataAtom.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MachineLearningData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

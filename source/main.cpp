@@ -35,8 +35,6 @@
 #include "syzygy/tbprobe.h"
 #include "polybook.h"
 
-#include "MachineLeaningControl.h"
-
 namespace PSQT {
 	void init();
 }
@@ -88,12 +86,10 @@ int main(int argc, char* argv[]) {
   Tablebases::init(Options["SyzygyPath"]); // After Bitboards are set
   Threads.set(Options["Threads"]);
   polybook.init(Options["BookFile"]);
-  MachineLearningControlMain.SetFileName(Options["Machine Learning File"]);
   Search::clear(); // After threads are up
 
   UCI::loop(argc, argv);
 
   Threads.set(0);
-
   return 0;
 }
