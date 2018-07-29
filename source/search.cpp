@@ -40,13 +40,13 @@
 #include "uci.h"
 #include "syzygy/tbprobe.h"
 
-int Options_Shashin_Depth;
-bool Options_Shashin_Mobility;
-bool Options_Shashin_King;
-bool Options_Shashin_Threats;
-bool Options_Shashin_Passed;
-bool Options_Shashin_Space;
-bool Options_Shashin_Initiative;
+int Options_Junior_Depth;
+bool Options_Junior_Mobility;
+bool Options_Junior_King;
+bool Options_Junior_Threats;
+bool Options_Junior_Passed;
+bool Options_Junior_Space;
+bool Options_Junior_Initiative;
 bool Options_Shashin_Strategy;
 
 namespace Search {
@@ -232,13 +232,13 @@ void MainThread::search() {
   tactical = Options["Tactical Mode"];
   variety = Options["Variety"];
   
-  Options_Shashin_Depth = Options["Shashin Depth"];
-  Options_Shashin_Mobility = Options["Shashin Mobility"];
-  Options_Shashin_King = Options["Shashin King"];
-  Options_Shashin_Threats = Options["Shashin Threats"];
-  Options_Shashin_Passed = Options["Shashin Passed"];
-  Options_Shashin_Space = Options["Shashin Space"];
-  Options_Shashin_Initiative = Options["Shashin Initiative"];
+  Options_Junior_Depth = Options["Junior Depth"];
+  Options_Junior_Mobility = Options["Junior Mobility"];
+  Options_Junior_King = Options["Junior King"];
+  Options_Junior_Threats = Options["Junior Threats"];
+  Options_Junior_Passed = Options["Junior Passed"];
+  Options_Junior_Space = Options["Junior Space"];
+  Options_Junior_Initiative = Options["Junior Initiative"];
   Options_Shashin_Strategy = Options["Shashin Strategy"];
  
   if (rootMoves.empty())
@@ -309,7 +309,7 @@ finalize:
   Thread* bestThread = this;
   if (    Options["MultiPV"] == 1
       && !Limits.depth
-      && !Skill(Options["Skill Level"]).enabled()
+      && !Skill(int(Options["Skill Level"])).enabled()
       &&  rootMoves[0].pv[0] != MOVE_NONE)
   {
       for (Thread* th : Threads)
@@ -368,7 +368,8 @@ void Thread::search() {
       mainThread->bestMoveChanges = 0, failedLow = false;
 
   size_t multiPV = Options["MultiPV"];
-  Skill skill(Options["Skill Level"]);
+  int local_int = Options["Skill Level"];
+  Skill skill(local_int);
 
   if (tactical) multiPV = size_t(pow(2, tactical));
   
@@ -395,7 +396,7 @@ void Thread::search() {
 
   // Iterative deepening loop until requested to stop or the target depth is reached
   while (   (rootDepth += ONE_PLY) < DEPTH_MAX
-	     && rootDepth <= Options_Shashin_Depth
+	     && rootDepth <= Options_Junior_Depth
          && !Threads.stop
          && !(Limits.depth && mainThread && rootDepth / ONE_PLY > Limits.depth))
   {

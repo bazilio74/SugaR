@@ -32,13 +32,13 @@
 #include "thread.h"
 #include "uci.h"
 
-extern int Options_Shashin_Depth;
-extern bool Options_Shashin_Mobility;
-extern bool Options_Shashin_King;
-extern bool Options_Shashin_Threats;
-extern bool Options_Shashin_Passed;
-extern bool Options_Shashin_Space;
-extern bool Options_Shashin_Initiative;
+extern int Options_Junior_Depth;
+extern bool Options_Junior_Mobility;
+extern bool Options_Junior_King;
+extern bool Options_Junior_Threats;
+extern bool Options_Junior_Passed;
+extern bool Options_Junior_Space;
+extern bool Options_Junior_Initiative;
 extern bool Options_Shashin_Strategy;
 
 #define PAWN_SCORES
@@ -191,10 +191,8 @@ namespace {
   //	Queen for Knight Scores advantage compensation
   constexpr Score QueenScores = S(+20, +60);
 
-  //	Pawns Storm for Center Pawns advantage compensation
-  constexpr Score PawnStormCompensationPawnScoresPawnsCenter = S(- 5, - 5);			//	Exact numbers to be determined
   //	Pawns Shelter for Knight Scores advantage compensation
-  constexpr Score PawnShelterCompensationKnightScores = S(+ 10, + 10);					//	Exact numbers to be determined
+  constexpr Score PawnShelterCompensationKnightScores = S(+ 10, + 0);					//	Exact numbers to be determined
 
 #ifdef PAWN_SCORES
   //  Pawn Scores Board
@@ -412,10 +410,10 @@ namespace {
                 if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
                     score += LongDiagonalBishop;
 
-		if (pos.piece_on(s) == make_piece(Us, BISHOP))
-		{
-			score += BishopScores;
-		}
+				if (pos.piece_on(s) == make_piece(Us, BISHOP))
+				{
+					score += BishopScores;
+				}
             }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
@@ -432,29 +430,29 @@ namespace {
                                                                               : CorneredBishop;
             }
 
-		if (Pt == KNIGHT)
-		{
-			if (pos.piece_on(s) == make_piece(Us, KNIGHT))
+			if (Pt == KNIGHT)
 			{
-				int rank = rank_of(s);
-				int file = file_of(s);
-				if (Us == WHITE)
+				if (pos.piece_on(s) == make_piece(Us, KNIGHT))
 				{
-					score += KnightScoresBoard[rank][file];
-				}
-				else
-				{
-					if (Us == BLACK)
+					int rank = rank_of(s);
+					int file = file_of(s);
+					if (Us == WHITE)
 					{
-						score += KnightScoresBoard[RANK_NB - 1 -rank][file];
+						score += KnightScoresBoard[rank][file];
 					}
 					else
 					{
-						assert(false);
+						if (Us == BLACK)
+						{
+							score += KnightScoresBoard[RANK_NB - 1 -rank][file];
+						}
+						else
+						{
+							assert(false);
+						}
 					}
 				}
 			}
-		}
         }
 
         if (Pt == ROOK)
@@ -847,11 +845,6 @@ namespace {
 					  assert(false);
 				  }
 			  }
-
-			  if (file == FILE_D || file == FILE_E)
-			  {
-				  score += PawnStormCompensationPawnScoresPawnsCenter;
-			  }
 		  }
 	  }
 
@@ -1027,31 +1020,31 @@ namespace {
 		}
 	}
 
-	if (Options_Shashin_Mobility)
+	if (Options_Junior_Mobility)
 	{
 		score += mobility[WHITE] - mobility[BLACK];
 	}
-	if (Options_Shashin_King)
+	if (Options_Junior_King)
 	{
 		Score default_king = king<   WHITE>() - king<   BLACK>();
 		Score score_king = Score(int(double(default_king) * king_Shashin_scale));
 		score += score_king;
 	}
-	if (Options_Shashin_Threats)
+	if (Options_Junior_Threats)
 	{
 		score += threats<WHITE>() - threats<BLACK>();
 	}
-	if (Options_Shashin_Passed)
+	if (Options_Junior_Passed)
 	{
 		Score default_passed = passed< WHITE>() - passed< BLACK>();
 		Score score_passed = Score(int(double(default_passed) * passed_Shashin_scale));
 		score += score_passed;
 	}
-	if (Options_Shashin_Space)
+	if (Options_Junior_Space)
 	{
 		score += space<  WHITE>() - space<  BLACK>();
 	}
-	if (Options_Shashin_Initiative)
+	if (Options_Junior_Initiative)
 	{
 		score += initiative(eg_value(score));
 	}
