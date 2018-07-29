@@ -198,9 +198,9 @@ namespace {
   constexpr Score QueenScores = S(+20, +60);
 
   //	Pawns Storm for Center Pawns advantage compensation
-  constexpr Score PawnStormCompensationPawnScoresPawnsCenter = S(- 5, - 5);			//	Exact numbers to be determined
+  constexpr Score PawnStormCompensationPawnScoresPawnsCenter = S(- 5, + 0);			//	Exact numbers to be determined
   //	Pawns Shelter for Knight Scores advantage compensation
-  constexpr Score PawnShelterCompensationKnightScores = S(+ 10, + 10);					//	Exact numbers to be determined
+  constexpr Score PawnShelterCompensationKnightScores = S(+10, + 0);				//	Exact numbers to be determined
 
 #ifdef PAWN_SCORES
   //  Pawn Scores Board
@@ -419,10 +419,10 @@ namespace {
                 if (more_than_one(Center & (attacks_bb<BISHOP>(s, pos.pieces(PAWN)) | s)))
                     score += LongDiagonalBishop;
 
-		if (pos.piece_on(s) == make_piece(Us, BISHOP))
-		{
-			score += BishopScores;
-		}
+				if (pos.piece_on(s) == make_piece(Us, BISHOP))
+				{
+					score += BishopScores;
+				}
             }
 
             // An important Chess960 pattern: A cornered bishop blocked by a friendly
