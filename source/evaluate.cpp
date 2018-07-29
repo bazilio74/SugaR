@@ -32,13 +32,13 @@
 #include "thread.h"
 #include "uci.h"
 
-extern int Options_Shashin_Depth;
-extern bool Options_Shashin_Mobility;
-extern bool Options_Shashin_King;
-extern bool Options_Shashin_Threats;
-extern bool Options_Shashin_Passed;
-extern bool Options_Shashin_Space;
-extern bool Options_Shashin_Initiative;
+extern int Options_Junior_Depth;
+extern bool Options_Junior_Mobility;
+extern bool Options_Junior_King;
+extern bool Options_Junior_Threats;
+extern bool Options_Junior_Passed;
+extern bool Options_Junior_Space;
+extern bool Options_Junior_Initiative;
 extern bool Options_Shashin_Strategy;
 
 #define PAWN_SCORES
@@ -1020,31 +1020,31 @@ namespace {
 		}
 	}
 
-	if (Options_Shashin_Mobility)
+	if (Options_Junior_Mobility)
 	{
 		score += mobility[WHITE] - mobility[BLACK];
 	}
-	if (Options_Shashin_King)
+	if (Options_Junior_King)
 	{
 		Score default_king = king<   WHITE>() - king<   BLACK>();
 		Score score_king = Score(int(double(default_king) * king_Shashin_scale));
 		score += score_king;
 	}
-	if (Options_Shashin_Threats)
+	if (Options_Junior_Threats)
 	{
 		score += threats<WHITE>() - threats<BLACK>();
 	}
-	if (Options_Shashin_Passed)
+	if (Options_Junior_Passed)
 	{
 		Score default_passed = passed< WHITE>() - passed< BLACK>();
 		Score score_passed = Score(int(double(default_passed) * passed_Shashin_scale));
 		score += score_passed;
 	}
-	if (Options_Shashin_Space)
+	if (Options_Junior_Space)
 	{
 		score += space<  WHITE>() - space<  BLACK>();
 	}
-	if (Options_Shashin_Initiative)
+	if (Options_Junior_Initiative)
 	{
 		score += initiative(eg_value(score));
 	}

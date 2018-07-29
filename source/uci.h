@@ -49,12 +49,24 @@ public:
   Option(OnChange = nullptr);
   Option(bool v, OnChange = nullptr);
   Option(const char* v, OnChange = nullptr);
-  Option(double v, int minv, int maxv, OnChange = nullptr);
-  Option(const char* v, const char* cur, OnChange = nullptr);
+  Option(const char* lv, const char* v, OnChange = nullptr);
+  template<class T> Option(T v, T minv, T maxv, OnChange f = nullptr) : type("spin"), min(minv), max(maxv), on_change(f)
+  {
+	  defaultValue = currentValue = std::to_string(v);
+  }
 
   Option& operator=(const std::string&);
   void operator<<(const Option&);
-  operator double() const;
+  template<class T> operator T() const
+  {
+	  assert(type == "spin");
+	  return (type == "spin" ? T(stof(currentValue)): 0);
+  }
+  template<bool> operator bool() const
+  {
+	  assert(type == "check");
+	  return (type == "check" ? (currentValue == "true") : false);
+  }
   operator std::string() const;
   bool operator==(const char*) const;
 
