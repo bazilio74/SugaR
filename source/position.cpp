@@ -168,6 +168,8 @@ void Position::init() {
   Zobrist::noPawns = rng.rand<Key>();
 
   // Prepare the cuckoo tables
+  std::memset(cuckoo, 0, sizeof(cuckoo));
+  std::memset(cuckooMove, 0, sizeof(cuckooMove));
   int count = 0;
   for (Piece pc : Pieces)
       for (Square s1 = SQ_A1; s1 <= SQ_H8; ++s1)
@@ -1137,7 +1139,7 @@ bool Position::has_repeated() const {
         if (end < i)
             return false;
 
-        StateInfo* stp = st->previous->previous;
+        StateInfo* stp = stc->previous->previous;
 
         do {
             stp = stp->previous->previous;
