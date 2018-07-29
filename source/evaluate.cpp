@@ -195,7 +195,7 @@ namespace {
   constexpr Score QueenScores = S(+20, +60);
 
   //	Pawns Shelter for Knight Scores advantage compensation
-  constexpr Score PawnShelterCompensationKnightScores = S(+ 10, + 10);					//	Exact numbers to be determined
+  constexpr Score PawnShelterCompensationKnightScores = S(+ 10, + 0);					//	Exact numbers to be determined
 
 #ifdef PAWN_SCORES
   //  Pawn Scores Board
