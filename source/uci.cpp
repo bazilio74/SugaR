@@ -227,7 +227,6 @@ void UCI::loop(int argc, char* argv[]) {
 
       else if (token == "setoption")  setoption(is);
       else if (token == "go")         go(pos, is, states);
-<<<<<<< HEAD
 	  else if (token == "g")          go(pos, is, states);
 	  else if (token == "q")          cmd = "quit";
 	  else if (token == "position")
@@ -242,9 +241,6 @@ void UCI::loop(int argc, char* argv[]) {
 		  if (Options["Clean_Search"] == true)
 			  Search::clear();
 	  }
-=======
-      else if (token == "position")   position(pos, is, states);
->>>>>>> origin/master
       else if (token == "ucinewgame") Search::clear();
       else if (token == "isready")    sync_cout << "readyok" << sync_endl;
 

@@ -87,10 +87,6 @@ int main(int argc, char* argv[]) {
   polybook.init(Options["BookFile"]);
   Tablebases::init(Options["SyzygyPath"]); // After Bitboards are set
   Threads.set(Options["Threads"]);
-<<<<<<< HEAD
-=======
-  polybook.init(Options["BookFile"]);
->>>>>>> origin/master
   Search::clear(); // After threads are up
 
   UCI::loop(argc, argv);
