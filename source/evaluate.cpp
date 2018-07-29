@@ -194,10 +194,8 @@ namespace {
   //	Queen for Knight Scores advantage compensation
   constexpr Score QueenScores = S(+20, +60);
 
-  //	Pawns Storm for Center Pawns advantage compensation
-  constexpr Score PawnStormCompensationPawnScoresPawnsCenter = S(- 5, + 0);			//	Exact numbers to be determined
   //	Pawns Shelter for Knight Scores advantage compensation
-  constexpr Score PawnShelterCompensationKnightScores = S(+ 10, + 0);					//	Exact numbers to be determined
+  constexpr Score PawnShelterCompensationKnightScores = S(+ 10, + 10);					//	Exact numbers to be determined
 
 #ifdef PAWN_SCORES
   //  Pawn Scores Board
@@ -437,29 +435,29 @@ namespace {
                                                                               : CorneredBishop;
             }
 
-		if (Pt == KNIGHT)
-		{
-			if (pos.piece_on(s) == make_piece(Us, KNIGHT))
+			if (Pt == KNIGHT)
 			{
-				int rank = rank_of(s);
-				int file = file_of(s);
-				if (Us == WHITE)
+				if (pos.piece_on(s) == make_piece(Us, KNIGHT))
 				{
-					score += KnightScoresBoard[rank][file];
-				}
-				else
-				{
-					if (Us == BLACK)
+					int rank = rank_of(s);
+					int file = file_of(s);
+					if (Us == WHITE)
 					{
-						score += KnightScoresBoard[RANK_NB - 1 -rank][file];
+						score += KnightScoresBoard[rank][file];
 					}
 					else
 					{
-						assert(false);
+						if (Us == BLACK)
+						{
+							score += KnightScoresBoard[RANK_NB - 1 -rank][file];
+						}
+						else
+						{
+							assert(false);
+						}
 					}
 				}
 			}
-		}
         }
 
         if (Pt == ROOK)
@@ -855,12 +853,6 @@ namespace {
 				  {
 					  assert(false);
 				  }
-			  }
-
-			  if (file == FILE_D || file == FILE_E)
-			  {
-				  score += PawnStormCompensationPawnScoresPawnsCenter;
-
 			  }
 		  }
 	  }
