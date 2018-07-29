@@ -95,7 +95,7 @@ void init(OptionsMap& o) {
   o["Junior King"]					<< Option(true);
   o["Junior Threats"]				<< Option(true);
   o["Junior Passed"]				<< Option(true);
-  o["Junior Space"]				<< Option(true);
+  o["Junior Space"]				    << Option(true);
   o["Junior Initiative"]			<< Option(true);
   o["Shashin Strategy"]				<< Option(true);
   o["NeverClearHash"]           << Option(false);
@@ -109,13 +109,13 @@ void init(OptionsMap& o) {
   o["SyzygyProbeDepth"]      << Option(1, 1, 100);
   o["Syzygy50MoveRule"]      << Option(true);
   o["SyzygyProbeLimit"]      << Option(6, 0, 6);
-  o["Correspondence Chess Analyzer"]     << Option();
-  o["Analysis Mode"]            << Option(0, 0,  8);
+  o["Tactical Mode"]            << Option(0, 0,  8);
   o["NullMove"]                 << Option(true);
   o["Polyglot Book management"] << Option();
   o["OwnBook"]                  << Option(false);
   o["Book File"]                << Option("book.bin");
   o["Cerebellum Book Library"]  << Option();
+  o["Book_Enabled"]          << Option(true);
   o["BookFile"]              << Option("Cerebellum_Light_Poly.bin", on_book_file);
   o["BestBookMove"]          << Option(true, on_best_book_move);
   o["BookDepth"]             << Option(255, 1, 255, on_book_depth);   
