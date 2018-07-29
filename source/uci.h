@@ -49,7 +49,7 @@ public:
   Option(OnChange = nullptr);
   Option(bool v, OnChange = nullptr);
   Option(const char* v, OnChange = nullptr);
-  Option(const char* lv, const char* v, OnChange = nullptr);
+  Option(const char* v, const char* cur, OnChange = nullptr);
   template<class T> Option(T v, T minv, T maxv, OnChange f = nullptr) : type("spin"), min(minv), max(maxv), on_change(f)
   {
 	  defaultValue = currentValue = std::to_string(v);
