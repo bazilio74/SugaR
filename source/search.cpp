@@ -346,7 +346,7 @@ finalize:
 void Thread::search() {
 
   Stack stack[MAX_PLY+7], *ss = stack+4; // To reference from (ss-4) to (ss+2)
-  Value bestValue, alpha, beta, delta;
+  Value bestValue, alpha, beta, delta, playoutValue, bonus;
   Move  lastBestMove = MOVE_NONE;
   Depth lastBestMoveDepth = DEPTH_ZERO;
   MainThread* mainThread = (this == Threads.main() ? Threads.main() : nullptr);
@@ -454,7 +454,15 @@ void Thread::search() {
           // high/low anymore.
           while (true)
           {
-              bestValue = ::search<PV>(rootPos, ss, alpha, beta, rootDepth, false);
+              if (mainThread && !Threads.stop)
+		        playoutValue = playout(lastBestMove, ss, bestValue);
+              
+              bonus = VALUE_ZERO;
+              if (rootDepth > 5 * ONE_PLY)
+                bonus = playoutValue - bestValue >  PawnValueMg ? Value(1)   :
+                        playoutValue - bestValue < -PawnValueMg ? Value(-1)  :
+                                                                  VALUE_ZERO ;
+              bestValue = ::search<PV>(rootPos, ss, alpha + bonus, beta + bonus, rootDepth, false);
 
               // Bring the best move to the front. It is critical that sorting
               // is done with a stable algorithm because all the values but the
@@ -562,9 +570,6 @@ void Thread::search() {
                       Threads.stop = true;
               }
           }
-        if (mainThread && !Threads.stop)
-		   playout(lastBestMove, ss, bestValue);
-          
   }
 
   if (!mainThread)
@@ -601,7 +606,7 @@ Value Thread::playout(Move playMove, Stack* ss, Value playoutValue) {
 
     rootPos.do_move(playMove, st);
 
-    int d = int(rootDepth) * int(rootDepth) / (rootDepth + 4 * ONE_PLY) - ss->ply/2;
+    int d = int(rootDepth) * int(rootDepth) / (rootDepth + 6 * ONE_PLY) - ss->ply/2;
 	Depth newDepth  = d * ONE_PLY;
 	playoutValue = - ::search<NonPV>(rootPos, ss+1, - playoutValue,  - playoutValue + 1, newDepth, false);
 	
