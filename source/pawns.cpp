@@ -206,10 +206,6 @@ namespace {
 				{
 					rpp = Rank(rpp + 1);
 				}
-				else
-				{
-					assert(false);
-				}
 			}
 
 			if (rpp != rp1)

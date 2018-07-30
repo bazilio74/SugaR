@@ -250,7 +250,7 @@ void MainThread::search() {
   }
   else
   {
-      if (Options["OwnBook"] && !Limits.infinite && !Limits.mate)
+      if (bool(Options["OwnBook"]) && !Limits.infinite && !Limits.mate)
       {
           Move bookMove = book.probe(rootPos, Options["Book File"], Options["Best Book Line"]);
 
@@ -307,7 +307,7 @@ finalize:
 
   // Check if there are threads with a better score than main thread
   Thread* bestThread = this;
-  if (    Options["MultiPV"] == 1
+  if (    int(Options["MultiPV"]) == 1
       && !Limits.depth
       && !Skill(int(Options["Skill Level"])).enabled()
       &&  rootMoves[0].pv[0] != MOVE_NONE)
@@ -383,7 +383,7 @@ void Thread::search() {
   int ct = int(Options["Contempt"]) * PawnValueEg / 100; // From centipawns
 
   // In analysis mode, adjust contempt in accordance with user preference
-  if (Limits.infinite || Options["UCI_AnalyseMode"])
+  if (Limits.infinite || bool(Options["UCI_AnalyseMode"]))
       ct =  Options["Analysis Contempt"] == "Off"  ? 0
           : Options["Analysis Contempt"] == "Both" ? ct
           : Options["Analysis Contempt"] == "White" && us == BLACK ? -ct
