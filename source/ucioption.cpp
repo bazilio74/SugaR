@@ -113,7 +113,7 @@ void init(OptionsMap& o) {
   o["SyzygyProbeLimit"]      << Option(6, 0, 6);
   o["Large Pages"]           << Option(false, on_large_pages);
   o["Tactical Mode"]         << Option(0, 0,  8);
-  o["Clean Search"]          << Option(false);
+  o["Clear Search"]          << Option(false);
   o["NullMove"]              << Option(true);
   o["Variety"]               << Option (0, 0, 40);
   o["Book_Enabled"]          << Option(true);

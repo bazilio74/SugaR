@@ -48,6 +48,8 @@ namespace {
 	constexpr Score KingSafetyCompensationPawnScoresConnectedPassed = S(- 5, + 0);
 	//	Protected Passed Pawn
 	constexpr Score ProtectedPassedPawn = S(+ 5, + 5);
+	constexpr Score PassedPawnInEnemySide = S(+200, +200);
+	constexpr Score RemotePassedPawn = S(+ 4, + 4);
 
 #endif
 
@@ -223,6 +225,31 @@ namespace {
 				if (passed1 && protected_passed_pawn)
 				{
 					score += ProtectedPassedPawn;
+				}
+			}
+
+			bool passed_in_enemy_side = false;
+			int passed_in_enemy_side_distance = 0;
+
+			if (passed1)
+			{
+				passed_in_enemy_side = relative_rank(Us, s) > RANK_4;
+				passed_in_enemy_side_distance = relative_rank(Us, s) - RANK_4;
+			}
+
+			if (passed_in_enemy_side)
+			{
+				for (int local_counter=0;local_counter<passed_in_enemy_side_distance; local_counter++)
+					score += PassedPawnInEnemySide;
+			}
+
+			if (passed1)
+			{
+				bool passed_in_flang = (f < FILE_C) || (f > FILE_F);
+
+				if (passed_in_flang)
+				{
+					score += RemotePassedPawn;
 				}
 			}
 #endif
