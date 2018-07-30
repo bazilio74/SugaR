@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
   Position::init();
   Bitbases::init();
 
-  Search::init(Options["Clean Search"]);
+  Search::init(Options["Clear Search"]);
   Pawns::init();
   polybook.init(Options["BookFile"]);
   Tablebases::init(Options["SyzygyPath"]); // After Bitboards are set
