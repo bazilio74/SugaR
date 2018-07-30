@@ -59,14 +59,10 @@ public:
   void operator<<(const Option&);
   template<class T> operator T() const
   {
-	  assert(type == "spin");
-	  return (type == "spin" ? T(stof(currentValue)): 0);
+	  assert(type == "spin" || type == "check");
+	  return (type == "spin" ? T(stof(currentValue)): type == "check" ? (currentValue == "true") : T(0));
   }
-  template<bool> operator bool() const
-  {
-	  assert(type == "check");
-	  return (type == "check" ? (currentValue == "true") : false);
-  }
+
   operator std::string() const;
   bool operator==(const char*) const;
 
