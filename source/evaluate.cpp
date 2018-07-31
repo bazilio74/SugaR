@@ -2,7 +2,7 @@
   SugaR, a UCI chess playing engine derived from Stockfish
   Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
   Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
-  Copyright (C) 2015-2017 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+  Copyright (C) 2015-2018 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
 
   SugaR is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,6 @@
 #include <cstring>   // For std::memset
 #include <iomanip>
 #include <sstream>
-#include <cmath>
 
 #include "bitboard.h"
 #include "evaluate.h"
@@ -1006,6 +1005,8 @@ namespace {
 
 	double king_Shashin_scale = Shashin_Scale_Factor_Default;
 	double passed_Shashin_scale = Shashin_Scale_Factor_Default;
+												 
+												  
 
 	if (Options_Shashin_Strategy)
 	{

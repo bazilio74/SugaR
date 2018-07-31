@@ -2,7 +2,7 @@
   SugaR, a UCI chess playing engine derived from Stockfish
   Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
   Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
-  Copyright (C) 2015-2017 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+  Copyright (C) 2015-2018 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
 
   SugaR is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,17 +22,14 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>   // For std::memset
-//#include <unistd.h> //for sleep
 #include <iostream>
 #include <sstream>
-#include <random>
-#include "book.h"
+
 #include "evaluate.h"
 #include "misc.h"
 #include "movegen.h"
 #include "movepick.h"
 #include "position.h"
-#include "polybook.h"
 #include "search.h"
 #include "thread.h"
 #include "timeman.h"
@@ -107,9 +104,6 @@ namespace {
     int level;
     Move best = MOVE_NONE;
   };
-  
-  bool doNull, cleanSearch, bookEnabled;
-  int tactical, variety;
 
   template <NodeType NT>
   Value search(Position& pos, Stack* ss, Value alpha, Value beta, Depth depth, bool cutNode);
@@ -162,8 +156,7 @@ namespace {
 
 /// Search::init() is called at startup to initialize various lookup tables
 
-void Search::init(bool OptioncleanSearch) {
-  cleanSearch = OptioncleanSearch;
+void Search::init() {
 
   for (int imp = 0; imp <= 1; ++imp)
       for (int d = 1; d < 64; ++d)
@@ -190,10 +183,6 @@ void Search::init(bool OptioncleanSearch) {
 /// Search::clear() resets search state to its initial value
 
 void Search::clear() {
-//Hash
-  if (Options["NeverClearHash"])
-	return;
-//end_Hash
 
   Threads.main()->wait_for_search_finished();
 
@@ -215,23 +204,10 @@ void MainThread::search() {
       return;
   }
 
-  static PolyglotBook book; // Defined static to initialize the PRNG only once
-
-  bookEnabled = Options["Book_Enabled"];
   Color us = rootPos.side_to_move();
   Time.init(Limits, us, rootPos.game_ply());
-//Hash			  
-  if (!Limits.infinite)
   TT.new_search();
-  else
-  TT.infinite_search();
-//end_hash
 
-  // Read search options
-  doNull = Options["NullMove"];
-  tactical = Options["Tactical Mode"];
-  variety = Options["Variety"];
-  
   Options_Junior_Depth = Options["Junior Depth"];
   Options_Junior_Mobility = Options["Junior Mobility"];
   Options_Junior_King = Options["Junior King"];
@@ -250,37 +226,13 @@ void MainThread::search() {
   }
   else
   {
-      if (bool(Options["OwnBook"]) && !Limits.infinite && !Limits.mate)
-      {
-          Move bookMove = book.probe(rootPos, Options["Book File"], Options["Best Book Line"]);
+      for (Thread* th : Threads)
+          if (th != this)
+              th->start_searching();
 
-          if (bookMove && std::count(rootMoves.begin(), rootMoves.end(), bookMove))
-          {
-              std::swap(rootMoves[0], *std::find(rootMoves.begin(), rootMoves.end(), bookMove));
-              goto finalize;
-          }
-      }
-		Move bookMove = MOVE_NONE;
-		
-		if (!Limits.infinite && !Limits.mate)
-		bookMove = polybook.probe(rootPos);
-		
-		if (bookEnabled && bookMove && std::count(rootMoves.begin(), rootMoves.end(), bookMove))
-		{
-			for (Thread* th : Threads)
-				std::swap(th->rootMoves[0], *std::find(th->rootMoves.begin(), th->rootMoves.end(), bookMove));
-		}
-		else
-		{
-          for (Thread* th : Threads)
-              if (th != this)
-                  th->start_searching();
-
-          Thread::search(); // Let's start searching!
-      }
+      Thread::search(); // Let's start searching!
   }
 
-finalize:
   // When we reach the maximum depth, we can arrive here without a raise of
   // Threads.stop. However, if we are pondering or in an infinite search,
   // the UCI protocol states that we shouldn't print the best move before the
@@ -358,9 +310,6 @@ void Thread::search() {
   for (int i = 4; i > 0; i--)
      (ss-i)->continuationHistory = this->continuationHistory[NO_PIECE][0].get(); // Use as sentinel
 
-  if (cleanSearch)
-	  Search::clear();
-
   bestValue = delta = alpha = -VALUE_INFINITE;
   beta = VALUE_INFINITE;
 
@@ -371,8 +320,6 @@ void Thread::search() {
   int local_int = Options["Skill Level"];
   Skill skill(local_int);
 
-  if (tactical) multiPV = size_t(pow(2, tactical));
-  
   // When playing with strength handicap enable MultiPV search that we will
   // use behind the scenes to retrieve a set of possible moves.
   if (skill.enabled())
@@ -743,7 +690,7 @@ namespace {
                 {
                     tte->save(posKey, value_to_tt(value, ss->ply), b,
                               std::min(DEPTH_MAX - ONE_PLY, depth + 6 * ONE_PLY),
-                              MOVE_NONE, VALUE_NONE, TT.generation());
+                              MOVE_NONE, VALUE_NONE);
 
                     return value;
                 }
@@ -784,7 +731,7 @@ namespace {
                                          : -(ss-1)->staticEval + 2 * Eval::Tempo;
 
         tte->save(posKey, VALUE_NONE, BOUND_NONE, DEPTH_NONE, MOVE_NONE,
-                  ss->staticEval, TT.generation());
+                  ss->staticEval);
     }
 
     // Step 7. Razoring (~2 Elo)
@@ -809,8 +756,7 @@ namespace {
         return eval;
 
     // Step 9. Null move search with verification search (~40 Elo)
-    if (    doNull
-        && !PvNode
+    if (   !PvNode
         && (ss-1)->currentMove != MOVE_NULL
         && (ss-1)->statScore < 22500
         &&  eval >= beta
@@ -1247,7 +1193,7 @@ moves_loop: // When in check, search starts from here
         tte->save(posKey, value_to_tt(bestValue, ss->ply),
                   bestValue >= beta ? BOUND_LOWER :
                   PvNode && bestMove ? BOUND_EXACT : BOUND_UPPER,
-                  depth, bestMove, ss->staticEval, TT.generation());
+                  depth, bestMove, ss->staticEval);
 
     assert(bestValue > -VALUE_INFINITE && bestValue < VALUE_INFINITE);
 
@@ -1346,7 +1292,7 @@ moves_loop: // When in check, search starts from here
         {
             if (!ttHit)
                 tte->save(posKey, value_to_tt(bestValue, ss->ply), BOUND_LOWER,
-                          DEPTH_NONE, MOVE_NONE, ss->staticEval, TT.generation());
+                          DEPTH_NONE, MOVE_NONE, ss->staticEval);
 
             return bestValue;
         }
@@ -1449,16 +1395,13 @@ moves_loop: // When in check, search starts from here
               else // Fail high
               {
                   tte->save(posKey, value_to_tt(value, ss->ply), BOUND_LOWER,
-                            ttDepth, move, ss->staticEval, TT.generation());
+                            ttDepth, move, ss->staticEval);
 
                   return value;
               }
           }
        }
     }
-	
-    if (variety && (bestValue + (variety * PawnValueEg / 100) >= 0 ))
-	  bestValue += rand() % (variety + 1);
 
     // All legal moves have been searched. A special case: If we're in check
     // and no legal moves were found, it is checkmate.
@@ -1467,7 +1410,7 @@ moves_loop: // When in check, search starts from here
 
     tte->save(posKey, value_to_tt(bestValue, ss->ply),
               PvNode && bestValue > oldAlpha ? BOUND_EXACT : BOUND_UPPER,
-              ttDepth, bestMove, ss->staticEval, TT.generation());
+              ttDepth, bestMove, ss->staticEval);
 
     assert(bestValue > -VALUE_INFINITE && bestValue < VALUE_INFINITE);
 

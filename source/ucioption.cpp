@@ -2,7 +2,7 @@
   SugaR, a UCI chess playing engine derived from Stockfish
   Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
   Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
-  Copyright (C) 2015-2017 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+  Copyright (C) 2015-2018 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
 
   SugaR is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,10 +21,6 @@
 #include <algorithm>
 #include <cassert>
 #include <ostream>
-//Hash		
-#include <iostream>
-//end_Hash
-#include <thread>
 
 #include "misc.h"
 #include "search.h"
@@ -32,7 +28,6 @@
 #include "tt.h"
 #include "uci.h"
 #include "syzygy/tbprobe.h"
-#include "polybook.h"
 
 using std::string;
 
@@ -43,20 +38,10 @@ namespace UCI {
 /// 'On change' actions, triggered by an option's value change
 void on_clear_hash(const Option&) { Search::clear(); }
 void on_hash_size(const Option& o) { TT.resize(o); }
-void on_large_pages(const Option& o) { TT.resize(o); }  // warning is ok, will be removed
 void on_logger(const Option& o) { start_logger(o); }
 void on_threads(const Option& o) { Threads.set(o); }
 void on_tb_path(const Option& o) { Tablebases::init(o); }
-//Hash	
-void on_HashFile(const Option& o) { TT.set_hash_file_name(o); }
-void SaveHashtoFile(const Option&) { TT.save(); }
-void LoadHashfromFile(const Option&) { TT.load(); }
-void LoadEpdToHash(const Option&) { TT.load_epd_to_hash(); }
-//end_Hash
 
-void on_book_file(const Option& o) { polybook.init(o); }
-void on_best_book_move(const Option& o) { polybook.set_best_book_move(o); }
-void on_book_depth(const Option& o) { polybook.set_book_depth(o); }
 
 /// Our case insensitive less() function as required by UCI protocol
 bool CaseInsensitiveLess::operator() (const string& s1, const string& s2) const {
@@ -73,19 +58,13 @@ void init(OptionsMap& o) {
   // at most 2^32 clusters.
   constexpr int MaxHashMB = Is64Bit ? 131072 : 2048;
 
-  unsigned n = std::thread::hardware_concurrency();
-  if (!n) n = 1;
-  
   o["Debug Log File"]        << Option("", on_logger);
   o["Contempt"]              << Option(21, -100, 100);
   o["Analysis Contempt"]     << Option("Both var Off var White var Black var Both", "Both");
-  o["Threads"]               << Option(n, unsigned(1), unsigned(512), on_threads);
+  o["Threads"]               << Option(1, 1, 512, on_threads);
   o["Hash"]                  << Option(16, 1, MaxHashMB, on_hash_size);
-  o["Clear_Hash"]            << Option(on_clear_hash);
+  o["Clear Hash"]            << Option(on_clear_hash);
   o["Ponder"]                << Option(false);
-  o["OwnBook"]               << Option(false);
-  o["Book File"]             << Option("book.bin");
-  o["Best Book Move"]        << Option(false);
   o["MultiPV"]               << Option(1, 1, 500);
   o["Skill Level"]           << Option(20, 0, 20);
   o["Move Overhead"]         << Option(30, 0, 5000);
@@ -101,25 +80,11 @@ void init(OptionsMap& o) {
   o["Junior Space"]			 << Option(true);
   o["Junior Initiative"]	 << Option(true);
   o["Shashin Strategy"]		 << Option(true);
-  o["NeverClearHash"]        << Option(false);
-  o["HashFile"]              << Option("hash.hsh", on_HashFile);
-  o["SaveHashtoFile"]        << Option(SaveHashtoFile);
-  o["LoadHashfromFile"]      << Option(LoadHashfromFile);
-  o["LoadEpdToHash"]         << Option(LoadEpdToHash);
   o["UCI_AnalyseMode"]       << Option(false);
   o["SyzygyPath"]            << Option("<empty>", on_tb_path);
   o["SyzygyProbeDepth"]      << Option(1, 1, 100);
   o["Syzygy50MoveRule"]      << Option(true);
   o["SyzygyProbeLimit"]      << Option(7, 0, 7);
-  o["Large Pages"]           << Option(false, on_large_pages);
-  o["Tactical Mode"]         << Option(0, 0,  8);
-  o["Clear Search"]          << Option(false);
-  o["NullMove"]              << Option(true);
-  o["Variety"]               << Option (0, 0, 40);
-  o["Book_Enabled"]          << Option(true);
-  o["BookFile"]              << Option("Cerebellum_Light_Poly.bin", on_book_file);
-  o["BestBookMove"]          << Option(true, on_best_book_move);
-  o["BookDepth"]             << Option(255, 1, 255, on_book_depth);
 }
 
 
@@ -151,10 +116,6 @@ std::ostream& operator<<(std::ostream& os, const OptionsMap& om) {
 
 
 /// Option class constructors and conversion operators
-Option::Option(const char* v, const char* cur, OnChange f) : type("combo"), min(0), max(0), on_change(f)
-{
-	defaultValue = v; currentValue = cur;
-}
 
 Option::Option(const char* v, OnChange f) : type("string"), min(0), max(0), on_change(f)
 { defaultValue = currentValue = v; }
@@ -164,6 +125,17 @@ Option::Option(bool v, OnChange f) : type("check"), min(0), max(0), on_change(f)
 
 Option::Option(OnChange f) : type("button"), min(0), max(0), on_change(f)
 {}
+
+Option::Option(double v, int minv, int maxv, OnChange f) : type("spin"), min(minv), max(maxv), on_change(f)
+{ defaultValue = currentValue = std::to_string(v); }
+
+Option::Option(const char* v, const char* cur, OnChange f) : type("combo"), min(0), max(0), on_change(f)
+{ defaultValue = v; currentValue = cur; }
+
+Option::operator double() const {
+  assert(type == "check" || type == "spin");
+  return (type == "spin" ? stof(currentValue) : currentValue == "true");
+}
 
 Option::operator std::string() const {
   assert(type == "string");

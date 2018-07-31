@@ -2,7 +2,7 @@
   SugaR, a UCI chess playing engine derived from Stockfish
   Copyright (C) 2004-2008 Tord Romstad (Glaurung author)
   Copyright (C) 2008-2015 Marco Costalba, Joona Kiiski, Tord Romstad
-  Copyright (C) 2015-2017 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
+  Copyright (C) 2015-2018 Marco Costalba, Joona Kiiski, Gary Linscott, Tord Romstad
 
   SugaR is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -90,13 +90,13 @@ const vector<string> Defaults = {
 } // namespace
 
 /// setup_bench() builds a list of UCI commands to be run by bench. There
-/// are five parameters: TT size in MiB, number of search threads that
+/// are five parameters: TT size in MB, number of search threads that
 /// should be used, the limit value spent for each position, a file name
 /// where to look for positions in FEN format and the type of the limit:
 /// depth, perft, nodes and movetime (in millisecs).
 ///
 /// bench -> search default positions up to depth 13
-/// bench 64 1 15 -> search default positions up to depth 15 (TT = 64MiB)
+/// bench 64 1 15 -> search default positions up to depth 15 (TT = 64MB)
 /// bench 64 4 5000 current movetime -> search current position with 4 threads for 5 sec
 /// bench 64 1 100000 default nodes -> search default positions for 100K nodes each
 /// bench 16 1 5 default perft -> run a perft 5 on default positions
