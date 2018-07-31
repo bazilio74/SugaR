@@ -346,7 +346,7 @@ finalize:
 void Thread::search() {
 
   Stack stack[MAX_PLY+7], *ss = stack+4; // To reference from (ss-4) to (ss+2)
-  Value bestValue, alpha, beta, delta, playoutValue, bonus;
+  Value bestValue, alpha, beta, delta;
   Move  lastBestMove = MOVE_NONE;
   Depth lastBestMoveDepth = DEPTH_ZERO;
   MainThread* mainThread = (this == Threads.main() ? Threads.main() : nullptr);
@@ -454,15 +454,7 @@ void Thread::search() {
           // high/low anymore.
           while (true)
           {
-              if (mainThread && !Threads.stop)
-		        playoutValue = playout(lastBestMove, ss, bestValue);
-              
-              bonus = VALUE_ZERO;
-              if (rootDepth > 5 * ONE_PLY)
-                bonus = playoutValue - bestValue >  PawnValueMg ? Value(1)   :
-                        playoutValue - bestValue < -PawnValueMg ? Value(-1)  :
-                                                                  VALUE_ZERO ;
-              bestValue = ::search<PV>(rootPos, ss, alpha + bonus, beta + bonus, rootDepth, false);
+              bestValue = ::search<PV>(rootPos, ss, alpha, beta, rootDepth, false);
 
               // Bring the best move to the front. It is critical that sorting
               // is done with a stable algorithm because all the values but the
@@ -583,44 +575,6 @@ void Thread::search() {
                 skill.best ? skill.best : skill.pick_best(multiPV)));
 }
 
-// Playout a game, in the hope of meaningfully filling the TT beyond the horizon
-Value Thread::playout(Move playMove, Stack* ss, Value playoutValue) {
-    StateInfo st;
-    bool ttHit;
-    TTEntry* tte ;
-
-    if (!MoveList<LEGAL>(rootPos).size())
-         return rootPos.checkers()? mated_in(ss->ply): VALUE_DRAW;
-
-    if (     Threads.stop 
-        ||  !rootPos.pseudo_legal(playMove)
-        ||  !rootPos.legal(playMove))
-        return playoutValue;
-
-    if (rootPos.is_draw(ss->ply))
-        return VALUE_DRAW;
-
-    ss->currentMove         = playMove;
-    ss->continuationHistory = continuationHistory[rootPos.moved_piece(playMove)][to_sq(playMove)].get();
-    (ss+1)->ply = ss->ply + 1;
-
-    rootPos.do_move(playMove, st);
-
-    int d = int(rootDepth) * int(rootDepth) / (rootDepth + 6 * ONE_PLY) - ss->ply/2;
-	Depth newDepth  = d * ONE_PLY;
-	playoutValue = - ::search<NonPV>(rootPos, ss+1, - playoutValue,  - playoutValue + 1, newDepth, false);
-	
-    tte    = TT.probe(rootPos.key(), ttHit);   
-    Move ttMove  = ttHit ? tte->move() : MOVE_NONE;
-    if(  ttHit 
-      && ttMove != MOVE_NONE 
-      && ss->ply < MAX_PLY - 2
-      && abs(playoutValue) < VALUE_KNOWN_WIN)
-        playoutValue = - playout(ttMove, ss+1, - playoutValue);
-
-    rootPos.undo_move(playMove);
-	return playoutValue;
-}
 
 namespace {
 
