@@ -1010,7 +1010,7 @@ namespace {
 	if (Options_Shashin_Strategy)
 	{
 		{
-			constexpr double Shashin_Winning_Scale_Factor_Default = 0.1;
+			constexpr double Shashin_Winning_Scale_Factor_Default = 0.05;
 
 			constexpr double Alpha = 0.5;
 			const double Beta = abs(Shashin_Winning_Scale_Factor_Default * 2 / (MidgameLimit + EndgameLimit));
