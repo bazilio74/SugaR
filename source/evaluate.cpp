@@ -1017,8 +1017,14 @@ namespace {
 
 			const double Shashin_Scale_Factor_Bonus = (-abs(v_Shashin_test / SHASHIN_ADVANTAGE_VALUE) + Alpha);
 
-			passed_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus * Beta;
-			king_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus * Beta;
+			if (abs(v_Shashin_test) >= double(PawnValueMg + PawnValueEg) / 2.0)
+			{
+				king_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus * Beta;
+			}
+			else
+			{
+				passed_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus * Beta;
+			}
 		}
 	}
 
