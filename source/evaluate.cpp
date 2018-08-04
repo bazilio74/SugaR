@@ -206,6 +206,10 @@ namespace {
 		{ S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0) },
 		{ S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0), S(+ 0, + 0) },
   };
+
+  //	Undeveloped Piece Penalty
+  constexpr Score UndevelopedPiecePenalty = S(-20,-10);
+
 #endif
   // Assorted bonuses and penalties
   constexpr Score BishopPawns        = S(  3,  7);
@@ -847,6 +851,18 @@ namespace {
 					  assert(false);
 				  }
 			  }
+		  }
+	  }
+
+	  //	Evaluation of development
+
+	  const Square* pld = pos.squares<ALL_PIECES>(Us);
+
+	  while ((s = *pld++) != SQ_NONE)
+	  {
+		  if (relative_rank(Us, s) == RANK_1)
+		  {
+			  score += UndevelopedPiecePenalty;
 		  }
 	  }
 
