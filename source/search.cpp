@@ -73,10 +73,6 @@ namespace {
   // Different node types, used as a template parameter
   enum NodeType { NonPV, PV };
 
-  // Sizes and phases of the skip-blocks, used for distributing search depths across the threads
-  constexpr int SkipSize[]  = { 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4 };
-  constexpr int SkipPhase[] = { 0, 1, 0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7 };
-
   // Razor and futility margins
   constexpr int RazorMargin[] = {0, 590, 604};
   Value futility_margin(Depth d, bool improving) {
@@ -307,23 +303,6 @@ finalize:
 
   // Check if there are threads with a better score than main thread
   Thread* bestThread = this;
-  if (    int(Options["MultiPV"]) == 1
-      && !Limits.depth
-      && !Skill(int(Options["Skill Level"])).enabled()
-      &&  rootMoves[0].pv[0] != MOVE_NONE)
-  {
-      for (Thread* th : Threads)
-      {
-          Depth depthDiff = th->completedDepth - bestThread->completedDepth;
-          Value scoreDiff = th->rootMoves[0].score - bestThread->rootMoves[0].score;
-
-          // Select the thread with the best score, always if it is a mate
-          if (    scoreDiff > 0
-              && (depthDiff >= 0 || th->rootMoves[0].score >= VALUE_MATE_IN_MAX_PLY))
-              bestThread = th;
-      }
-  }
-
   previousScore = bestThread->rootMoves[0].score;
 
   // Send again PV info if we have a new best thread
@@ -356,7 +335,7 @@ void Thread::search() {
 
   std::memset(ss-4, 0, 7 * sizeof(Stack));
   for (int i = 4; i > 0; i--)
-     (ss-i)->continuationHistory = this->continuationHistory[NO_PIECE][0].get(); // Use as sentinel
+     (ss-i)->continuationHistory = &this->continuationHistory[NO_PIECE][0]; // Use as sentinel
 
   if (cleanSearch)
 	  Search::clear();
@@ -401,12 +380,8 @@ void Thread::search() {
          && !(Limits.depth && mainThread && rootDepth / ONE_PLY > Limits.depth))
   {
       // Distribute search depths across the helper threads
-      if (idx > 0)
-      {
-          int i = (idx - 1) % 20;
-          if (((rootDepth / ONE_PLY + SkipPhase[i]) / SkipSize[i]) % 2)
-              continue;  // Retry with an incremented rootDepth
-      }
+      if (!mainThread  && rootDepth <= Threads.main()->completedDepth - 9 * ONE_PLY)
+          continue;
 
       // Age out PV variability metric
       if (mainThread)
@@ -517,6 +492,8 @@ void Thread::search() {
          lastBestMoveDepth = rootDepth;
       }
 
+      playout(lastBestMove, ss);
+
       // Have we found a "mate in x"?
       if (   Limits.mate
           && bestValue >= VALUE_MATE_IN_MAX_PLY
@@ -562,6 +539,8 @@ void Thread::search() {
                       Threads.stop = true;
               }
           }
+
+
   }
 
   if (!mainThread)
@@ -573,6 +552,22 @@ void Thread::search() {
   if (skill.enabled())
       std::swap(rootMoves[0], *std::find(rootMoves.begin(), rootMoves.end(),
                 skill.best ? skill.best : skill.pick_best(multiPV)));
+}
+
+void Thread::playout(Move playMove, Stack* ss) {
+    StateInfo st;
+    bool ttHit;
+    rootPos.do_move(playMove, st);
+    TTEntry* tte    = TT.probe(rootPos.key(), ttHit);
+    Value ttValue   = ttHit ? value_from_tt(tte->value(), ss->ply) : VALUE_NONE;
+    Move ttMove     = ttHit ? tte->move() : MOVE_NONE;  
+    if(ttHit && ttMove != MOVE_NONE && MoveList<LEGAL>(rootPos).size() && ss->ply < MAX_PLY){
+        (ss+1)->ply = ss->ply + 1;
+        //Value v = 
+		qsearch<NonPV>(rootPos, ss+1, ttValue-1, ttValue, DEPTH_ZERO);
+        playout(ttMove, ss+1);
+    }
+    rootPos.undo_move(playMove);
 }
 
 
@@ -660,7 +655,7 @@ namespace {
 
     (ss+1)->ply = ss->ply + 1;
     ss->currentMove = (ss+1)->excludedMove = bestMove = MOVE_NONE;
-    ss->continuationHistory = thisThread->continuationHistory[NO_PIECE][0].get();
+    ss->continuationHistory = &thisThread->continuationHistory[NO_PIECE][0];
     (ss+2)->killers[0] = (ss+2)->killers[1] = MOVE_NONE;
     Square prevSq = to_sq((ss-1)->currentMove);
 
@@ -825,7 +820,7 @@ namespace {
         Depth R = ((823 + 67 * depth / ONE_PLY) / 256 + std::min((eval - beta) / PawnValueMg, 3)) * ONE_PLY;
 
         ss->currentMove = MOVE_NULL;
-        ss->continuationHistory = thisThread->continuationHistory[NO_PIECE][0].get();
+        ss->continuationHistory = &thisThread->continuationHistory[NO_PIECE][0];
 
         pos.do_null_move(st);
 
@@ -876,7 +871,7 @@ namespace {
                 probCutCount++;
 
                 ss->currentMove = move;
-                ss->continuationHistory = thisThread->continuationHistory[pos.moved_piece(move)][to_sq(move)].get();
+                ss->continuationHistory = &thisThread->continuationHistory[pos.moved_piece(move)][to_sq(move)];
 
                 assert(depth >= 5 * ONE_PLY);
 
@@ -1044,7 +1039,7 @@ moves_loop: // When in check, search starts from here
 
       // Update the current move (this must be done after singular extension search)
       ss->currentMove = move;
-      ss->continuationHistory = thisThread->continuationHistory[movedPiece][to_sq(move)].get();
+      ss->continuationHistory = &thisThread->continuationHistory[movedPiece][to_sq(move)];
 
       // Step 15. Make the move
       pos.do_move(move, st, givesCheck);
@@ -1287,7 +1282,7 @@ moves_loop: // When in check, search starts from here
     Thread* thisThread = pos.this_thread();
     (ss+1)->ply = ss->ply + 1;
     ss->currentMove = bestMove = MOVE_NONE;
-    ss->continuationHistory = thisThread->continuationHistory[NO_PIECE][0].get();
+    ss->continuationHistory = &thisThread->continuationHistory[NO_PIECE][0];
     inCheck = pos.checkers();
     moveCount = 0;
 
@@ -1422,7 +1417,7 @@ moves_loop: // When in check, search starts from here
       }
 
       ss->currentMove = move;
-      ss->continuationHistory = thisThread->continuationHistory[pos.moved_piece(move)][to_sq(move)].get();
+      ss->continuationHistory = &thisThread->continuationHistory[pos.moved_piece(move)][to_sq(move)];
 
       // Make and search the move
       pos.do_move(move, st, givesCheck);
