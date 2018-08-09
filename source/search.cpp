@@ -47,7 +47,7 @@ bool Options_Junior_Threats;
 bool Options_Junior_Passed;
 bool Options_Junior_Space;
 bool Options_Junior_Initiative;
-bool Options_Shashin_Strategy;
+bool Options_Dynamic_Strategy;
 
 namespace Search {
 
@@ -239,7 +239,7 @@ void MainThread::search() {
   Options_Junior_Passed = Options["Junior Passed"];
   Options_Junior_Space = Options["Junior Space"];
   Options_Junior_Initiative = Options["Junior Initiative"];
-  Options_Shashin_Strategy = Options["Shashin Strategy"];
+  Options_Dynamic_Strategy = Options["Dynamic Strategy"];
  
   if (rootMoves.empty())
   {
