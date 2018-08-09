@@ -39,7 +39,7 @@ extern bool Options_Junior_Threats;
 extern bool Options_Junior_Passed;
 extern bool Options_Junior_Space;
 extern bool Options_Junior_Initiative;
-extern bool Options_Shashin_Strategy;
+extern bool Options_Dynamic_Strategy;
 
 #define PAWN_SCORES
 
@@ -1014,32 +1014,32 @@ namespace {
             + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
-	Value v_Shashin_test = v;
+	Value v_Dynamic_test = v;
 	
-	constexpr double SHASHIN_ADVANTAGE_PAWNS_COUNT = 1.0;
-	constexpr Value SHASHIN_ADVANTAGE_VALUE = Value(int(SHASHIN_ADVANTAGE_PAWNS_COUNT * double(PawnValueMg + PawnValueEg) / 2.0));
-	constexpr double Shashin_Scale_Factor_Default = 1.0;
+	constexpr double DYNAMIC_ADVANTAGE_PAWNS_COUNT = 1.0;
+	constexpr Value DYNAMIC_ADVANTAGE_VALUE = Value(int(DYNAMIC_ADVANTAGE_PAWNS_COUNT * double(PawnValueMg + PawnValueEg) / 2.0));
+	constexpr double Dynamic_Scale_Factor_Default = 1.0;
 
-	double king_Shashin_scale = Shashin_Scale_Factor_Default;
-	double passed_Shashin_scale = Shashin_Scale_Factor_Default;
+	double king_Dynamic_scale = Dynamic_Scale_Factor_Default;
+	double passed_Dynamic_scale = Dynamic_Scale_Factor_Default;
 
-	if (Options_Shashin_Strategy)
+	if (Options_Dynamic_Strategy)
 	{
 		{
-			constexpr double Shashin_Winning_Scale_Factor_Default = 0.05;
+			constexpr double Dynamic_Winning_Scale_Factor_Default = 0.05;
 
 			constexpr double Alpha = 0.5;
-			const double Beta = abs(Shashin_Winning_Scale_Factor_Default * 2 / (MidgameLimit + EndgameLimit));
+			const double Beta = abs(Dynamic_Winning_Scale_Factor_Default * 2 / (MidgameLimit + EndgameLimit));
 
-			const double Shashin_Scale_Factor_Bonus = (-abs(v_Shashin_test / SHASHIN_ADVANTAGE_VALUE) + Alpha);
+			const double Dynamic_Scale_Factor_Bonus = (-abs(v_Dynamic_test / DYNAMIC_ADVANTAGE_VALUE) + Alpha);
 
-			if (abs(v_Shashin_test) >= double(PawnValueMg + PawnValueEg) / 2.0)
+			if (abs(v_Dynamic_test) >= double(PawnValueMg + PawnValueEg) / 2.0)
 			{
-				king_Shashin_scale = Shashin_Scale_Factor_Default - Shashin_Scale_Factor_Bonus * Beta;
+				king_Dynamic_scale = Dynamic_Scale_Factor_Default - Dynamic_Scale_Factor_Bonus * Beta;
 			}
 			else
 			{
-				passed_Shashin_scale = Shashin_Scale_Factor_Default + Shashin_Scale_Factor_Bonus * Beta;
+				passed_Dynamic_scale = Dynamic_Scale_Factor_Default + Dynamic_Scale_Factor_Bonus * Beta;
 			}
 		}
 	}
@@ -1051,7 +1051,7 @@ namespace {
 	if (Options_Junior_King)
 	{
 		Score default_king = king<   WHITE>() - king<   BLACK>();
-		Score score_king = Score(int(double(default_king) * king_Shashin_scale));
+		Score score_king = Score(int(double(default_king) * king_Dynamic_scale));
 		score += score_king;
 	}
 	if (Options_Junior_Threats)
@@ -1061,7 +1061,7 @@ namespace {
 	if (Options_Junior_Passed)
 	{
 		Score default_passed = passed< WHITE>() - passed< BLACK>();
-		Score score_passed = Score(int(double(default_passed) * passed_Shashin_scale));
+		Score score_passed = Score(int(double(default_passed) * passed_Dynamic_scale));
 		score += score_passed;
 	}
 	if (Options_Junior_Space)
