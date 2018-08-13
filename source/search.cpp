@@ -22,7 +22,6 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>   // For std::memset
-//#include <unistd.h> //for sleep
 #include <iostream>
 #include <sstream>
 #include <random>
@@ -39,15 +38,6 @@
 #include "tt.h"
 #include "uci.h"
 #include "syzygy/tbprobe.h"
-
-int Options_Junior_Depth;
-bool Options_Junior_Mobility;
-bool Options_Junior_King;
-bool Options_Junior_Threats;
-bool Options_Junior_Passed;
-bool Options_Junior_Space;
-bool Options_Junior_Initiative;
-bool Options_Dynamic_Strategy;
 
 namespace Search {
 
@@ -108,8 +98,7 @@ namespace {
     Move best = MOVE_NONE;
   };
   
-  bool doNull, cleanSearch, bookEnabled;
-  int tactical, variety;
+  bool bookEnabled;
 
   template <NodeType NT>
   Value search(Position& pos, Stack* ss, Value alpha, Value beta, Depth depth, bool cutNode);
@@ -162,8 +151,7 @@ namespace {
 
 /// Search::init() is called at startup to initialize various lookup tables
 
-void Search::init(bool OptioncleanSearch) {
-  cleanSearch = OptioncleanSearch;
+void Search::init() {
 
   for (int imp = 0; imp <= 1; ++imp)
       for (int d = 1; d < 64; ++d)
@@ -227,20 +215,6 @@ void MainThread::search() {
   TT.infinite_search();
 //end_hash
 
-  // Read search options
-  doNull = Options["NullMove"];
-  tactical = Options["Tactical Mode"];
-  variety = Options["Variety"];
-  
-  Options_Junior_Depth = Options["Junior Depth"];
-  Options_Junior_Mobility = Options["Junior Mobility"];
-  Options_Junior_King = Options["Junior King"];
-  Options_Junior_Threats = Options["Junior Threats"];
-  Options_Junior_Passed = Options["Junior Passed"];
-  Options_Junior_Space = Options["Junior Space"];
-  Options_Junior_Initiative = Options["Junior Initiative"];
-  Options_Dynamic_Strategy = Options["Dynamic Strategy"];
- 
   if (rootMoves.empty())
   {
       rootMoves.emplace_back(MOVE_NONE);
@@ -307,9 +281,9 @@ finalize:
 
   // Check if there are threads with a better score than main thread
   Thread* bestThread = this;
-  if (    int(Options["MultiPV"]) == 1
+  if (    Options["MultiPV"] == 1
       && !Limits.depth
-      && !Skill(int(Options["Skill Level"])).enabled()
+      && !Skill(Options["Skill Level"]).enabled()
       &&  rootMoves[0].pv[0] != MOVE_NONE)
   {
       std::map<Move, int> votes;
@@ -324,7 +298,7 @@ finalize:
 
       // Vote according to score and depth
       for (Thread* th : Threads)
-          votes[th->rootMoves[0].pv[0]] +=  int(th->rootMoves[0].score - minScore)  
+          votes[th->rootMoves[0].pv[0]] +=  int(th->rootMoves[0].score - minScore)
                                           + int(th->completedDepth);
 
       // Select best thread
@@ -373,9 +347,6 @@ void Thread::search() {
   for (int i = 4; i > 0; i--)
      (ss-i)->continuationHistory = &this->continuationHistory[NO_PIECE][0]; // Use as sentinel
 
-  if (cleanSearch)
-	  Search::clear();
-
   bestValue = delta = alpha = -VALUE_INFINITE;
   beta = VALUE_INFINITE;
 
@@ -383,11 +354,8 @@ void Thread::search() {
       mainThread->bestMoveChanges = 0, failedLow = false;
 
   size_t multiPV = Options["MultiPV"];
-  int local_int = Options["Skill Level"];
-  Skill skill(local_int);
+  Skill skill(Options["Skill Level"]);
 
-  if (tactical) multiPV = size_t(pow(2, tactical));
-  
   // When playing with strength handicap enable MultiPV search that we will
   // use behind the scenes to retrieve a set of possible moves.
   if (skill.enabled())
@@ -398,7 +366,7 @@ void Thread::search() {
   int ct = int(Options["Contempt"]) * PawnValueEg / 100; // From centipawns
 
   // In analysis mode, adjust contempt in accordance with user preference
-  if (Limits.infinite || bool(Options["UCI_AnalyseMode"]))
+  if (Limits.infinite || Options["UCI_AnalyseMode"])
       ct =  Options["Analysis Contempt"] == "Off"  ? 0
           : Options["Analysis Contempt"] == "Both" ? ct
           : Options["Analysis Contempt"] == "White" && us == BLACK ? -ct
@@ -411,7 +379,6 @@ void Thread::search() {
 
   // Iterative deepening loop until requested to stop or the target depth is reached
   while (   (rootDepth += ONE_PLY) < DEPTH_MAX
-	     && rootDepth <= Options_Junior_Depth
          && !Threads.stop
          && !(Limits.depth && mainThread && rootDepth / ONE_PLY > Limits.depth))
   {
@@ -818,8 +785,7 @@ namespace {
         return eval;
 
     // Step 9. Null move search with verification search (~40 Elo)
-    if (    doNull
-        && !PvNode
+    if (   !PvNode
         && (ss-1)->currentMove != MOVE_NULL
         && (ss-1)->statScore < 23200
         &&  eval >= beta
@@ -1459,9 +1425,6 @@ moves_loop: // When in check, search starts from here
           }
        }
     }
-	
-    if (variety && (bestValue + (variety * PawnValueEg / 100) >= 0 ))
-	  bestValue += rand() % (variety + 1);
 
     // All legal moves have been searched. A special case: If we're in check
     // and no legal moves were found, it is checkmate.
