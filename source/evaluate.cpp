@@ -32,6 +32,15 @@
 #include "thread.h"
 #include "uci.h"
 
+extern int Options_Junior_Depth;
+extern bool Options_Junior_Mobility;
+extern bool Options_Junior_King;
+extern bool Options_Junior_Threats;
+extern bool Options_Junior_Passed;
+extern bool Options_Junior_Space;
+extern bool Options_Junior_Initiative;
+extern bool Options_Dynamic_Strategy;
+
 #define PAWN_SCORES
 
 namespace Trace {
@@ -1005,14 +1014,66 @@ namespace {
             + pieces<WHITE, ROOK  >() - pieces<BLACK, ROOK  >()
             + pieces<WHITE, QUEEN >() - pieces<BLACK, QUEEN >();
 
-    score += mobility[WHITE] - mobility[BLACK];
+	Value v_Dynamic_test = v;
+	
+	constexpr double DYNAMIC_ADVANTAGE_PAWNS_COUNT = 1.0;
+	constexpr Value DYNAMIC_ADVANTAGE_VALUE = Value(int(DYNAMIC_ADVANTAGE_PAWNS_COUNT * double(PawnValueMg + PawnValueEg) / 2.0));
+	constexpr double Dynamic_Scale_Factor_Default = 1.0;
 
-    score +=  king<   WHITE>() - king<   BLACK>()
-            + threats<WHITE>() - threats<BLACK>()
-            + passed< WHITE>() - passed< BLACK>()
-            + space<  WHITE>() - space<  BLACK>();
+	double king_Dynamic_scale = Dynamic_Scale_Factor_Default;
+	double passed_Dynamic_scale = Dynamic_Scale_Factor_Default;
+												 
+												  
 
-    score += initiative(eg_value(score));
+	if (Options_Dynamic_Strategy)
+	{
+		{
+			constexpr double Dynamic_Winning_Scale_Factor_Default = 0.05;
+
+			constexpr double Alpha = 0.5;
+			const double Beta = abs(Dynamic_Winning_Scale_Factor_Default * 2 / (MidgameLimit + EndgameLimit));
+
+			const double Dynamic_Scale_Factor_Bonus = (-abs(v_Dynamic_test / DYNAMIC_ADVANTAGE_VALUE) + Alpha);
+
+			if (abs(v_Dynamic_test) >= double(PawnValueMg + PawnValueEg) / 2.0)
+			{
+				king_Dynamic_scale = Dynamic_Scale_Factor_Default - Dynamic_Scale_Factor_Bonus * Beta;
+			}
+			else
+			{
+				passed_Dynamic_scale = Dynamic_Scale_Factor_Default + Dynamic_Scale_Factor_Bonus * Beta;
+			}
+		}
+	}
+
+	if (Options_Junior_Mobility)
+	{
+		score += mobility[WHITE] - mobility[BLACK];
+	}
+	if (Options_Junior_King)
+	{
+		Score default_king = king<   WHITE>() - king<   BLACK>();
+		Score score_king = Score(int(double(default_king) * king_Dynamic_scale));
+		score += score_king;
+	}
+	if (Options_Junior_Threats)
+	{
+		score += threats<WHITE>() - threats<BLACK>();
+	}
+	if (Options_Junior_Passed)
+	{
+		Score default_passed = passed< WHITE>() - passed< BLACK>();
+		Score score_passed = Score(int(double(default_passed) * passed_Dynamic_scale));
+		score += score_passed;
+	}
+	if (Options_Junior_Space)
+	{
+		score += space<  WHITE>() - space<  BLACK>();
+	}
+	if (Options_Junior_Initiative)
+	{
+		score += initiative(eg_value(score));
+	}
 
 #ifdef PAWN_SCORES
 	score += pawn_center<WHITE>() - pawn_center<BLACK>();

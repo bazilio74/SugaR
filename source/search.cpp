@@ -22,6 +22,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>   // For std::memset
+//#include <unistd.h> //for sleep
 #include <iostream>
 #include <sstream>
 #include <random>
@@ -38,6 +39,15 @@
 #include "tt.h"
 #include "uci.h"
 #include "syzygy/tbprobe.h"
+
+int Options_Junior_Depth;
+bool Options_Junior_Mobility;
+bool Options_Junior_King;
+bool Options_Junior_Threats;
+bool Options_Junior_Passed;
+bool Options_Junior_Space;
+bool Options_Junior_Initiative;
+bool Options_Dynamic_Strategy;
 
 namespace Search {
 
@@ -98,7 +108,10 @@ namespace {
     Move best = MOVE_NONE;
   };
   
-  bool bookEnabled;
+  bool doNull, doLMR, cleanSearch, bookEnabled;
+  Depth maxLMR;
+
+  int tactical, variety;
 
   template <NodeType NT>
   Value search(Position& pos, Stack* ss, Value alpha, Value beta, Depth depth, bool cutNode);
@@ -151,7 +164,8 @@ namespace {
 
 /// Search::init() is called at startup to initialize various lookup tables
 
-void Search::init() {
+void Search::init(bool OptioncleanSearch) {
+  cleanSearch = OptioncleanSearch;
 
   for (int imp = 0; imp <= 1; ++imp)
       for (int d = 1; d < 64; ++d)
@@ -215,6 +229,22 @@ void MainThread::search() {
   TT.infinite_search();
 //end_hash
 
+  // Read search options
+  doNull = Options["NullMove"];
+  doLMR = Options["LMR"];
+  maxLMR = Options["MaxLMReduction"] * ONE_PLY;
+  tactical = Options["ICCF Analyzes"];
+  variety = Options["Variety"];
+  
+  Options_Junior_Depth = Options["Junior Depth"];
+  Options_Junior_Mobility = Options["Junior Mobility"];
+  Options_Junior_King = Options["Junior King"];
+  Options_Junior_Threats = Options["Junior Threats"];
+  Options_Junior_Passed = Options["Junior Passed"];
+  Options_Junior_Space = Options["Junior Space"];
+  Options_Junior_Initiative = Options["Junior Initiative"];
+  Options_Dynamic_Strategy = Options["Dynamic Strategy"];
+ 
   if (rootMoves.empty())
   {
       rootMoves.emplace_back(MOVE_NONE);
@@ -347,6 +377,9 @@ void Thread::search() {
   for (int i = 4; i > 0; i--)
      (ss-i)->continuationHistory = &this->continuationHistory[NO_PIECE][0]; // Use as sentinel
 
+  if (cleanSearch)
+	  Search::clear();
+
   bestValue = delta = alpha = -VALUE_INFINITE;
   beta = VALUE_INFINITE;
 
@@ -356,6 +389,9 @@ void Thread::search() {
   size_t multiPV = Options["MultiPV"];
   int local_int = Options["Skill Level"];
   Skill skill(local_int);
+
+  if (tactical) multiPV = size_t(pow(2, tactical));
+  
   // When playing with strength handicap enable MultiPV search that we will
   // use behind the scenes to retrieve a set of possible moves.
   if (skill.enabled())
@@ -379,6 +415,7 @@ void Thread::search() {
 
   // Iterative deepening loop until requested to stop or the target depth is reached
   while (   (rootDepth += ONE_PLY) < DEPTH_MAX
+	     && rootDepth <= Options_Junior_Depth
          && !Threads.stop
          && !(Limits.depth && mainThread && rootDepth / ONE_PLY > Limits.depth))
   {
@@ -786,7 +823,8 @@ namespace {
         return eval;
 
     // Step 9. Null move search with verification search (~40 Elo)
-    if (   !PvNode
+    if (    doNull
+        && !PvNode
         && (ss-1)->currentMove != MOVE_NULL
         && (ss-1)->statScore < 23200
         &&  eval >= beta
@@ -1027,7 +1065,8 @@ moves_loop: // When in check, search starts from here
 
       // Step 16. Reduced depth search (LMR). If the move fails high it will be
       // re-searched at full depth.
-      if (    depth >= 3 * ONE_PLY
+	  if (    doLMR
+          &&  depth >= 3 * ONE_PLY
           &&  moveCount > 1
           && (!captureOrPromotion || moveCountPruning))
       {
@@ -1074,7 +1113,10 @@ moves_loop: // When in check, search starts from here
               // Decrease/increase reduction for moves with a good/bad history (~30 Elo)
               r -= ss->statScore / 20000 * ONE_PLY;
           }
-
+		  
+		  // Set maximum reduction
+          r = std::min(r, maxLMR);
+		  
           Depth d = std::max(newDepth - std::max(r, DEPTH_ZERO), ONE_PLY);
 
           value = -search<NonPV>(pos, ss+1, -(alpha+1), -alpha, d, true);
@@ -1425,6 +1467,9 @@ moves_loop: // When in check, search starts from here
           }
        }
     }
+	
+    if (variety && (bestValue + (variety * PawnValueEg / 100) >= 0 ))
+	  bestValue += rand() % (variety + 1);
 
     // All legal moves have been searched. A special case: If we're in check
     // and no legal moves were found, it is checkmate.
