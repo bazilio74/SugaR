@@ -112,10 +112,12 @@ void init(OptionsMap& o) {
   o["Syzygy50MoveRule"]      << Option(true);
   o["SyzygyProbeLimit"]      << Option(7, 0, 7);
   o["Large Pages"]           << Option(true, on_large_pages);
-  o["Tactical Mode"]         << Option(0, 0,  8);
+  o["ICCF Analyzes"]         << Option(0, 0,  8);
   o["Clear Search"]          << Option(false);
   o["NullMove"]              << Option(true);
-  o["Variety"]               << Option (0, 0, 40);
+  o["LMR"]                   << Option(true);
+  o["MaxLMReduction"]        << Option(10, 0, 20);
+  o["Variety"]               << Option (0, 0, 20);
   o["Book_Enabled"]          << Option(true);
   o["BookFile"]              << Option("Cerebellum_Light_Poly.bin", on_book_file);
   o["BestBookMove"]          << Option(true, on_best_book_move);
