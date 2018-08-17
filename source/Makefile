@@ -23,9 +23,9 @@
 
 ### Executable name
 ifeq ($(COMP),mingw)
-EXE = iccf.exe
+EXE = sugar.exe
 else
-EXE = iccf
+EXE = sugar
 endif
 
 ### Installation dir definitions
