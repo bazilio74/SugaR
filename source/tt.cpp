@@ -188,7 +188,7 @@ void TranspositionTable::resize(size_t mbSize) {
               free(mem);
       }
 
-      uint64_t memsize = clusterCount * sizeof(Cluster) + CacheLineSize - 1;
+      size_t memsize = clusterCount * sizeof(Cluster) + CacheLineSize - 1;
       mem = calloc(memsize, 1);
 #ifdef _WIN32
       large_pages_used = false;
@@ -205,7 +205,7 @@ void TranspositionTable::resize(size_t mbSize) {
               free(mem);
       }
 
-      int64_t memsize = clusterCount * sizeof(Cluster);
+      size_t memsize = clusterCount * sizeof(Cluster);
       mem = VirtualAlloc(NULL, memsize, MEM_LARGE_PAGES | MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
       if (mem == NULL)
       {
