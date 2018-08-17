@@ -86,10 +86,5 @@ Move to_move(const Position& pos, std::string& str);
 } // namespace UCI
 
 extern UCI::OptionsMap Options;
-enum {
-	NODES_TIME = 0,
-	SLOW_MOVER = 84,
-	MIN_THINK_TIME = 20,
-	MOVE_OVERHEAD = 200
-};
+
 #endif // #ifndef UCI_H_INCLUDED
