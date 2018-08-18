@@ -799,12 +799,14 @@ namespace {
     }
     else
     {
-        ss->staticEval = eval =
-        (ss-1)->currentMove != MOVE_NULL ? evaluate(pos) - 10 * ((ss-1)->statScore > 0)
-                                         : -(ss-1)->staticEval + 2 * Eval::Tempo;
+        int p = (ss-1)->statScore;
+        int malus = p > 0 ? (p + 5000) / 1024 :
+                    p < 0 ? (p - 5000) / 1024 : 0;
 
-        tte->save(posKey, VALUE_NONE, BOUND_NONE, DEPTH_NONE, MOVE_NONE,
-                  ss->staticEval);
+        ss->staticEval = eval = (ss-1)->currentMove != MOVE_NULL ? evaluate(pos) - malus
+                                                                 : -(ss-1)->staticEval + 2 * Eval::Tempo;
+
+        tte->save(posKey, VALUE_NONE, BOUND_NONE, DEPTH_NONE, MOVE_NONE, ss->staticEval);
     }
 
     // Step 7. Razoring (~2 Elo)
@@ -1359,6 +1361,7 @@ moves_loop: // When in check, search starts from here
             if (!ttHit)
                 tte->save(posKey, value_to_tt(bestValue, ss->ply), BOUND_LOWER,
                           DEPTH_NONE, MOVE_NONE, ss->staticEval);
+
             return bestValue;
         }
 
