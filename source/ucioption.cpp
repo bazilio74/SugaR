@@ -100,7 +100,7 @@ void init(OptionsMap& o) {
   o["Junior Passed"]		 << Option(true);
   o["Junior Space"]			 << Option(true);
   o["Junior Initiative"]	 << Option(true);
-  o["Dynamic Strategy"]		 << Option(false);
+  o["Dynamic Strategy"]		 << Option(true);
   o["NeverClearHash"]        << Option(false);
   o["HashFile"]              << Option("hash.hsh", on_HashFile);
   o["SaveHashtoFile"]        << Option(SaveHashtoFile);
